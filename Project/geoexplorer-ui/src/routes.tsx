@@ -1,38 +1,39 @@
 import { Route, Routes } from 'react-router-dom'
-import AdminDashboard from './pages/admin/AdminDashboard.tsx'
-import AdminLogin from './pages/admin/AdminLogin.tsx'
-import AnalyticsPage from './pages/admin/AnalyticsPage.tsx'
-import GameManagement from './pages/admin/GameManagement.tsx'
-import LeaderboardManagement from './pages/admin/LeaderboardManagement.tsx'
-import UserManagement from './pages/admin/UserManagement.tsx'
-import { GameHistoryPage } from './pages/GameHistoryPage.tsx'
-import { GamePage } from './pages/GamePage.tsx'
-import { GuessSubmissionPage } from './pages/GuessSubmissionPage.tsx'
-import { LandingPage } from './pages/LandingPage.tsx'
-import { LeaderboardPage } from './pages/LeaderboardPage.tsx'
-import Login from './pages/Login.tsx'
-import { ProfilePage } from './pages/ProfilePage.tsx'
-import { ResultPage } from './pages/ResultPage.tsx'
-import Signup from './pages/Signup.tsx'
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage.tsx'
+import { AdminLoginPage } from './pages/admin/AdminLoginPage.tsx'
+import { AnalyticsReportsPage } from './pages/admin/AnalyticsReportsPage.tsx'
+import { GameDataManagementPage } from './pages/admin/GameDataManagementPage.tsx'
+import { LeaderboardControlPage } from './pages/admin/LeaderboardControlPage.tsx'
+import { UserManagementPage } from './pages/admin/UserManagementPage.tsx'
+import Login from './pages/user/Login.tsx'
+import Signup from './pages/user/Signup.tsx'
+import { GamePage } from './pages/user/GamePage.tsx'
+import { GuessSubmissionPage } from './pages/user/GuessSubmissionPage.tsx'
+import { ResultPage } from './pages/user/ResultPage.tsx'
+import { GameHistoryPage } from './pages/user/GameHistoryPage.tsx'
+import { LandingPage } from './pages/user/LandingPage.tsx'
+import { LeaderboardPage } from './pages/user/LeaderboardPage.tsx'
+import { ProfilePage } from './pages/user/ProfilePage.tsx'
+import { ROUTES } from './utils/constants.ts'
 
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/game" element={<GamePage />} />
-      <Route path="/guess-submit" element={<GuessSubmissionPage />} />
-      <Route path="/result" element={<ResultPage />} />
-      <Route path="/leaderboard" element={<LeaderboardPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/history" element={<GameHistoryPage />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/admin/users" element={<UserManagement />} />
-      <Route path="/admin/game-data" element={<GameManagement />} />
-      <Route path="/admin/leaderboard" element={<LeaderboardManagement />} />
-      <Route path="/admin/reports" element={<AnalyticsPage />} />
+      <Route path={ROUTES.home} element={<LandingPage />} />
+      <Route path={ROUTES.login} element={<Login />} />
+      <Route path={ROUTES.signup} element={<Signup />} />
+      <Route path={ROUTES.game} element={<GamePage />} />
+      <Route path={ROUTES.guessSubmit} element={<GuessSubmissionPage />} />
+      <Route path={ROUTES.result} element={<ResultPage />} />
+      <Route path={ROUTES.leaderboard} element={<LeaderboardPage />} />
+      <Route path={ROUTES.profile} element={<ProfilePage />} />
+      <Route path={ROUTES.history} element={<GameHistoryPage />} />
+      <Route path={ROUTES.admin.login} element={<AdminLoginPage />} />
+      <Route path={ROUTES.admin.dashboard} element={<AdminDashboardPage />} />
+      <Route path={ROUTES.admin.users} element={<UserManagementPage />} />
+      <Route path={ROUTES.admin.gameData} element={<GameDataManagementPage />} />
+      <Route path={ROUTES.admin.leaderboard} element={<LeaderboardControlPage />} />
+      <Route path={ROUTES.admin.reports} element={<AnalyticsReportsPage />} />
     </Routes>
   )
 }

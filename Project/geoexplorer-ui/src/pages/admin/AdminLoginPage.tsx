@@ -1,4 +1,4 @@
-import { ScreenTemplate } from '../components/shared/ScreenTemplate'
+import { ScreenTemplate } from '../../components/shared/ScreenTemplate'
 
 export function AdminLoginPage() {
   return (

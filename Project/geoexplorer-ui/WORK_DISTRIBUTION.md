@@ -7,6 +7,17 @@ The system is divided into two main panels:
 
 The project consists of 10 modules in total. Both members contributed as full-stack developers across both frontend and backend. Each member is assigned an equal number of modules with clear responsibilities.
 
+## Where this lives in the repo (frontend)
+
+| Module / area | Primary folders (`geoexplorer-ui/src/`) |
+|---------------|----------------------------------------|
+| Auth, game, leaderboard, profile (user) | `pages/user/`, `features/auth/`, `features/game/`, `features/leaderboard/`, `features/user/` |
+| HTTP + JWT client | `services/axiosInstance.ts`, `services/interceptors.ts` |
+| Redux store root | `app/store.ts` (wire `configureStore` when ready) |
+| Admin (all five admin modules) | `pages/admin/`, `components/admin/` |
+
+**Full tree:** [FRONTEND_STRUCTURE.md](./FRONTEND_STRUCTURE.md) · **Monorepo:** [../GeoExplorer/README.md](../GeoExplorer/README.md)
+
 ## Haroon Aziz (i22-2697)
 
 ### User Panel Responsibilities

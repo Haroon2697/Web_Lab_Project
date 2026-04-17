@@ -1,5 +1,5 @@
-import { Footer } from './components/common/Footer.tsx'
-import { Navbar } from './components/common/Navbar.tsx'
+import { Footer } from './components/layout/Footer.tsx'
+import { Navbar } from './components/layout/Navbar.tsx'
 import { AppRoutes } from './routes.tsx'
 
 function App() {

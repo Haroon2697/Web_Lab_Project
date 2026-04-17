@@ -1,12 +1,13 @@
 import { NavLink } from 'react-router-dom'
+import { ROUTES } from '../../utils/constants.ts'
 
 const links = [
-  { to: '/', label: 'Home' },
-  { to: '/login', label: 'Login' },
-  { to: '/signup', label: 'Signup' },
-  { to: '/game', label: 'Game' },
-  { to: '/leaderboard', label: 'Leaderboard' },
-  { to: '/profile', label: 'Profile' },
+  { to: ROUTES.home, label: 'Home' },
+  { to: ROUTES.login, label: 'Login' },
+  { to: ROUTES.signup, label: 'Signup' },
+  { to: ROUTES.game, label: 'Game' },
+  { to: ROUTES.leaderboard, label: 'Leaderboard' },
+  { to: ROUTES.profile, label: 'Profile' },
 ]
 
 export function Navbar() {
