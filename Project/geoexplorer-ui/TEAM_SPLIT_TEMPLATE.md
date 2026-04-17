@@ -9,10 +9,10 @@
 
 | Area | Person | Code paths |
 |------|--------|------------|
-| User panel pages | Haroon | `src/pages/user/` — `LandingPage`, `LoginPage`, `SignupPage`, `GamePage`, `GuessSubmissionPage`, `ResultPage`, `LeaderboardPage`, `ProfilePage`, `GameHistoryPage`; entry re-exports `Login.tsx`, `Signup.tsx` |
+| User panel pages | Haroon | `src/pages/user/` — `LandingPage`, `LoginPage`, `SignupPage`, `GamePage`, `GuessSubmissionPage`, `ResultPage`, `LeaderboardPage`, `ProfilePage`, `GameHistoryPage`; entry re-exports `Login.jsx`, `Signup.jsx` |
 | User features (Redux + API) | Haroon | `src/features/auth/`, `features/game/`, `features/leaderboard/`, `features/user/` |
-| HTTP client | Haroon | `src/services/axiosInstance.ts`, `interceptors.ts` |
-| Admin panel pages | Khizar | `src/pages/admin/*Page.tsx` (templates until Khizar implements) |
+| HTTP client | Haroon | `src/services/axiosInstance.js`, `interceptors.js` |
+| Admin panel pages | Khizar | `src/pages/admin/*Page.jsx` (templates until Khizar implements) |
 | Admin UI building blocks | Khizar | `src/components/admin/` |
 | Shared layout | Shared | `src/components/layout/` (Navbar, Footer) |
 | Shared templates | Shared | `src/components/shared/` (e.g. `ScreenTemplate`) |
@@ -21,30 +21,30 @@
 
 ## User Panel Screens (Haroon Aziz)
 
-- `Landing Page` → `src/pages/user/LandingPage.tsx`
-- `Login Screen` → `src/pages/user/LoginPage.tsx` (+ `Login.tsx`)
-- `Signup Screen` → `src/pages/user/SignupPage.tsx` (+ `Signup.tsx`)
-- `Game Screen` → `src/pages/user/GamePage.tsx`
-- `Guess Submission Screen` → `src/pages/user/GuessSubmissionPage.tsx`
-- `Result Screen` → `src/pages/user/ResultPage.tsx`
-- `Leaderboard Screen` → `src/pages/user/LeaderboardPage.tsx`
-- `User Profile Screen` → `src/pages/user/ProfilePage.tsx`
-- `Game History Screen` → `src/pages/user/GameHistoryPage.tsx`
+- `Landing Page` → `src/pages/user/LandingPage.jsx`
+- `Login Screen` → `src/pages/user/LoginPage.jsx` (+ `Login.jsx`)
+- `Signup Screen` → `src/pages/user/SignupPage.jsx` (+ `Signup.jsx`)
+- `Game Screen` → `src/pages/user/GamePage.jsx`
+- `Guess Submission Screen` → `src/pages/user/GuessSubmissionPage.jsx`
+- `Result Screen` → `src/pages/user/ResultPage.jsx`
+- `Leaderboard Screen` → `src/pages/user/LeaderboardPage.jsx`
+- `User Profile Screen` → `src/pages/user/ProfilePage.jsx`
+- `Game History Screen` → `src/pages/user/GameHistoryPage.jsx`
 
 ## Admin Panel Screens (Khizar Shahid)
 
-- `Admin Login Screen` → `src/pages/admin/AdminLoginPage.tsx`
-- `Admin Dashboard Screen` → `src/pages/admin/AdminDashboardPage.tsx`
-- `User Management Screen` → `src/pages/admin/UserManagementPage.tsx`
-- `Game Data Management Screen` → `src/pages/admin/GameDataManagementPage.tsx`
-- `Leaderboard Control Screen` → `src/pages/admin/LeaderboardControlPage.tsx`
-- `Analytics & Reports Screen` → `src/pages/admin/AnalyticsReportsPage.tsx`
+- `Admin Login Screen` → `src/pages/admin/AdminLoginPage.jsx`
+- `Admin Dashboard Screen` → `src/pages/admin/AdminDashboardPage.jsx`
+- `User Management Screen` → `src/pages/admin/UserManagementPage.jsx`
+- `Game Data Management Screen` → `src/pages/admin/GameDataManagementPage.jsx`
+- `Leaderboard Control Screen` → `src/pages/admin/LeaderboardControlPage.jsx`
+- `Analytics & Reports Screen` → `src/pages/admin/AnalyticsReportsPage.jsx`
 
 ## Notes
 
 - **Haroon:** user pages are largely built as UI with mock/local data; backend + Redux wiring still to do.
 - **Khizar:** admin pages are **template placeholders** until implementation; do not mix ownership without agreement.
-- Route paths are centralized in `src/utils/constants.ts` (`ROUTES`).
+- Route paths are centralized in `src/utils/constants.js` (`ROUTES`).
 - Use separate branches per owner for implementation to reduce merge conflicts.
 
 ## 18. Work Distribution (Panel-wise Division)

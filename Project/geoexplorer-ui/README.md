@@ -25,7 +25,7 @@ Copy [`.env.example`](./.env.example) to `.env` and set `VITE_API_URL` when the 
 
 - React 19, React Router, TypeScript, Vite  
 - Tailwind CSS v4 (`src/styles/index.css`)  
-- Axios (`src/services/axiosInstance.ts` + `interceptors.ts`)  
+- Axios (`src/services/axiosInstance.js` + `interceptors.js`)  
 - Feature folders under `src/features/` (Redux slices + services — stubs until wired)
 
 ## Scripts

@@ -10,14 +10,14 @@ React + Vite + Tailwind. Modular layout: **`app`**, **`features`**, **`pages`**,
 
 | Proposal module | Person | Frontend location |
 |-----------------|--------|-------------------|
-| Authentication | Haroon | `pages/user/LoginPage.tsx`, `SignupPage.tsx`; `features/auth/` |
-| Game (core) | Haroon | `pages/user/GamePage.tsx`, `GuessSubmissionPage.tsx`, `ResultPage.tsx`; `features/game/`; `components/game/` |
-| Game history | Haroon | `pages/user/GameHistoryPage.tsx` |
-| Leaderboard | Haroon | `pages/user/LeaderboardPage.tsx`; `features/leaderboard/`; `components/leaderboard/` |
-| User profile (part) | Haroon | `pages/user/ProfilePage.tsx`; `features/user/`; `components/user/` |
-| Admin (all five) | Khizar | `pages/admin/*Page.tsx`; `components/admin/` |
+| Authentication | Haroon | `pages/user/LoginPage.jsx`, `SignupPage.jsx`; `features/auth/` |
+| Game (core) | Haroon | `pages/user/GamePage.jsx`, `GuessSubmissionPage.jsx`, `ResultPage.jsx`; `features/game/`; `components/game/` |
+| Game history | Haroon | `pages/user/GameHistoryPage.jsx` |
+| Leaderboard | Haroon | `pages/user/LeaderboardPage.jsx`; `features/leaderboard/`; `components/leaderboard/` |
+| User profile (part) | Haroon | `pages/user/ProfilePage.jsx`; `features/user/`; `components/user/` |
+| Admin (all five) | Khizar | `pages/admin/*Page.jsx`; `components/admin/` |
 | Axios + interceptors | Haroon | `services/` |
-| Redux store | Haroon (auth + game slices); extend for leaderboard/user | `app/store.ts` + `features/*/` |
+| Redux store | Haroon (auth + game slices); extend for leaderboard/user | `app/store.js` + `features/*/` |
 
 ---
 
@@ -26,7 +26,7 @@ React + Vite + Tailwind. Modular layout: **`app`**, **`features`**, **`pages`**,
 ```
 src/
 ├── app/
-│   └── store.ts
+│   └── store.js
 ├── assets/
 │   ├── images/
 │   └── icons/
@@ -39,22 +39,23 @@ src/
 │   ├── admin/
 │   └── shared/          ScreenTemplate, SectionCard, TemplateBlock
 ├── features/
-│   ├── auth/            authSlice.ts, authService.ts
-│   ├── game/            gameSlice.ts, gameService.ts
-│   ├── leaderboard/     leaderboardSlice.ts, leaderboardService.ts
-│   └── user/            userSlice.ts, userService.ts
+│   ├── auth/            authSlice.js, authService.js
+│   ├── game/            gameSlice.js, gameService.js
+│   ├── leaderboard/     leaderboardSlice.js, leaderboardService.js
+│   └── user/            userSlice.js, userService.js
 ├── hooks/               useAuth, useGame, useFetch
 ├── pages/
-│   ├── user/            all user-panel *Page.tsx (+ Login.tsx, Signup.tsx)
-│   └── admin/           all admin *Page.tsx
-├── services/            axiosInstance.ts, interceptors.ts
+│   ├── user/            all user-panel *Page.jsx (+ Login.jsx, Signup.jsx)
+│   └── admin/           all admin *Page.jsx
+├── services/            axiosInstance.js, interceptors.js
 ├── styles/              index.css (Tailwind + globals)
-├── utils/               constants.ts (ROUTES, API_BASE_URL), helpers.ts
-├── App.tsx
-├── main.tsx
-├── routes.tsx
-└── vite-env.d.ts
+├── utils/               constants.js (ROUTES, API_BASE_URL), helpers.js
+├── App.jsx
+├── main.jsx
+└── routes.jsx
 ```
+
+Project root also has **`jsconfig.json`** (editor / `import.meta.env` hints) and **`vite.config.js`**.
 
 ---
 
@@ -62,10 +63,10 @@ src/
 
 | Item | Convention | Example |
 |------|------------|---------|
-| Page file | `SomethingPage.tsx` | `GamePage.tsx` |
-| Feature slice | `featureSlice.ts` | `authSlice.ts` |
-| Feature API | `featureService.ts` | `authService.ts` |
-| Route paths | `ROUTES` in `utils/constants.ts` | `ROUTES.game` → `/game` |
+| Page file | `SomethingPage.jsx` | `GamePage.jsx` |
+| Feature slice | `featureSlice.js` | `authSlice.js` |
+| Feature API | `featureService.js` | `authService.js` |
+| Route paths | `ROUTES` in `utils/constants.js` | `ROUTES.game` → `/game` |
 | Folders | lowercase | `features/auth/` |
 
 ---
