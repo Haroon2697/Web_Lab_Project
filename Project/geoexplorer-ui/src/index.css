@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-geo-bg: #1a1a2e;
+  --color-geo-card: #10101c;
+  --color-geo-p10: #d9d7f0;
+  --color-geo-p20: #a19bd9;
+  --color-geo-p50: #7950e5;
+  --color-geo-p80: #563b9a;
+  --color-geo-success: #97e851;
+  --color-geo-success-dark: #6cb928;
+  --color-geo-error: #e94560;
+  --color-geo-warning: #fecd19;
+  --color-geo-hint: #ffa43d;
+  --color-geo-hint-dark: #bf7b2e;
+  --color-geo-info: #00a2fe;
+  --color-geo-aqua: #3ae8bd;
+  --color-geo-aqua-dark: #1f9c7d;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: Inter, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1a1a2e;
+    color: #ffffff;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply rounded-lg bg-geo-p50 px-4 py-2 font-medium text-white transition hover:bg-geo-p80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-geo-aqua;
+  }
+
+  .btn-secondary {
+    @apply rounded-lg border border-geo-p20/50 bg-geo-card px-4 py-2 font-medium text-geo-p10 transition hover:border-geo-aqua hover:text-geo-aqua focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-geo-aqua;
+  }
+}
