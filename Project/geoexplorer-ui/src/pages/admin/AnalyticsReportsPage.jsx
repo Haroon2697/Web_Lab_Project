@@ -3,7 +3,7 @@ import { ScreenTemplate } from '../../components/shared/ScreenTemplate'
 export function AnalyticsReportsPage() {
   return (
     <ScreenTemplate
-      screenTitle="Analytics & Reports Screen"
+      screenTitle="Analytics &amp; Reports Screen"
       panel="Admin Panel"
       owner="Khizar Shahid (i22-2595)"
       blocks={[

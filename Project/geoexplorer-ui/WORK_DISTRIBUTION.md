@@ -86,11 +86,11 @@ The project consists of 10 modules in total. Both members contributed as full-st
 - GitHub repository setup and version control
 - Frontend-backend integration testing
 
-## Khizar Shahid (i22-2595)
+## Khizar Shahid (i22-2595) - Admin Template Owner
 
-### Admin Panel Responsibilities
+### Admin Panel Responsibilities (Template-first, then full stack)
 
-1. **Admin Authentication Module (Full Stack)**
+1. **Admin Authentication Module (Template + Full Stack)**
    - Frontend:
      - Admin login UI
      - Secure login form
@@ -100,7 +100,7 @@ The project consists of 10 modules in total. Both members contributed as full-st
      - `/api/auth/admin` handling
      - `adminOnly` middleware
 
-2. **User Management Module (Full Stack)**
+2. **User Management Module (Template + Full Stack)**
    - Frontend:
      - User management dashboard
      - View users interface
@@ -112,7 +112,7 @@ The project consists of 10 modules in total. Both members contributed as full-st
      - Delete user accounts
      - User statistics tracking
 
-3. **Game Data Management Module (Full Stack)**
+3. **Game Data Management Module (Template + Full Stack)**
    - Frontend:
      - Game data control interface
      - Admin controls for game settings
@@ -122,7 +122,7 @@ The project consists of 10 modules in total. Both members contributed as full-st
      - Monitor game activity
      - Game management APIs
 
-4. **Leaderboard Management Module (Full Stack)**
+4. **Leaderboard Management Module (Template + Full Stack)**
    - Frontend:
      - Leaderboard control UI
      - Search/filter leaderboard
@@ -132,7 +132,7 @@ The project consists of 10 modules in total. Both members contributed as full-st
      - `/api/leaderboard` admin controls
      - Reset/update leaderboard functionality
 
-5. **Analytics & Reporting Module (Full Stack)**
+5. **Analytics & Reporting Module (Template + Full Stack)**
    - Frontend:
      - Admin analytics dashboard
      - Charts and statistics UI

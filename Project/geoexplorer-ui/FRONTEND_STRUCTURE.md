@@ -15,7 +15,7 @@ React + Vite + Tailwind. Modular layout: **`app`**, **`features`**, **`pages`**,
 | Game history | Haroon | `pages/user/GameHistoryPage.jsx` |
 | Leaderboard | Haroon | `pages/user/LeaderboardPage.jsx`; `features/leaderboard/`; `components/leaderboard/` |
 | User profile (part) | Haroon | `pages/user/ProfilePage.jsx`; `features/user/`; `components/user/` |
-| Admin (all five) | Khizar | `pages/admin/*Page.jsx`; `components/admin/` |
+| Admin (all five) | Khizar | `pages/admin/*Page.jsx`; `components/admin/` (GeoExplorer-themed template scaffolds) |
 | Axios + interceptors | Haroon | `services/` |
 | Redux store | Haroon (auth + game slices); extend for leaderboard/user | `app/store.js` + `features/*/` |
 

@@ -12,8 +12,8 @@
 | User panel pages | Haroon | `src/pages/user/` — `LandingPage`, `LoginPage`, `SignupPage`, `GamePage`, `GuessSubmissionPage`, `ResultPage`, `LeaderboardPage`, `ProfilePage`, `GameHistoryPage`; entry re-exports `Login.jsx`, `Signup.jsx` |
 | User features (Redux + API) | Haroon | `src/features/auth/`, `features/game/`, `features/leaderboard/`, `features/user/` |
 | HTTP client | Haroon | `src/services/axiosInstance.js`, `interceptors.js` |
-| Admin panel pages | Khizar | `src/pages/admin/*Page.jsx` (templates until Khizar implements) |
-| Admin UI building blocks | Khizar | `src/components/admin/` |
+| Admin panel pages | Khizar | `src/pages/admin/*Page.jsx` (GeoExplorer-themed templates until Khizar implements full modules) |
+| Admin UI building blocks | Khizar | `src/components/admin/` (template UI blocks, theme-aligned) |
 | Shared layout | Shared | `src/components/layout/` (Navbar, Footer) |
 | Shared templates | Shared | `src/components/shared/` (e.g. `ScreenTemplate`) |
 
@@ -31,19 +31,19 @@
 - `User Profile Screen` → `src/pages/user/ProfilePage.jsx`
 - `Game History Screen` → `src/pages/user/GameHistoryPage.jsx`
 
-## Admin Panel Screens (Khizar Shahid)
+## Admin Panel Screens (Khizar Shahid - Template Phase)
 
-- `Admin Login Screen` → `src/pages/admin/AdminLoginPage.jsx`
-- `Admin Dashboard Screen` → `src/pages/admin/AdminDashboardPage.jsx`
-- `User Management Screen` → `src/pages/admin/UserManagementPage.jsx`
-- `Game Data Management Screen` → `src/pages/admin/GameDataManagementPage.jsx`
-- `Leaderboard Control Screen` → `src/pages/admin/LeaderboardControlPage.jsx`
-- `Analytics & Reports Screen` → `src/pages/admin/AnalyticsReportsPage.jsx`
+- `Admin Login Screen (Template)` → `src/pages/admin/AdminLoginPage.jsx`
+- `Admin Dashboard Screen (Template)` → `src/pages/admin/AdminDashboardPage.jsx`
+- `User Management Screen (Template)` → `src/pages/admin/UserManagementPage.jsx`
+- `Game Data Management Screen (Template)` → `src/pages/admin/GameDataManagementPage.jsx`
+- `Leaderboard Control Screen (Template)` → `src/pages/admin/LeaderboardControlPage.jsx`
+- `Analytics & Reports Screen (Template)` → `src/pages/admin/AnalyticsReportsPage.jsx`
 
 ## Notes
 
 - **Haroon:** user pages are largely built as UI with mock/local data; backend + Redux wiring still to do.
-- **Khizar:** admin pages are **template placeholders** until implementation; do not mix ownership without agreement.
+- **Khizar:** admin pages are **GeoExplorer-themed template placeholders** until implementation; do not mix ownership without agreement.
 - Route paths are centralized in `src/utils/constants.js` (`ROUTES`).
 - Use separate branches per owner for implementation to reduce merge conflicts.
 
@@ -124,9 +124,9 @@ The project consists of 10 modules in total. Both members contributed as full-st
 - GitHub repository setup and version control
 - Frontend-backend integration testing
 
-### Khizar Shahid (i22-2595)
+### Khizar Shahid (i22-2595) - Admin Template Owner
 
-#### Admin Panel Responsibilities
+#### Admin Panel Responsibilities (Template-first, then full stack)
 
 1. **Admin Authentication Module (Full Stack)**
    - Frontend:
@@ -138,7 +138,7 @@ The project consists of 10 modules in total. Both members contributed as full-st
      - `/api/auth/admin` handling
      - `adminOnly` middleware
 
-2. **User Management Module (Full Stack)**
+2. **User Management Module (Template + Full Stack)**
    - Frontend:
      - User management dashboard
      - View users interface
@@ -150,7 +150,7 @@ The project consists of 10 modules in total. Both members contributed as full-st
      - Delete user accounts
      - User statistics tracking
 
-3. **Game Data Management Module (Full Stack)**
+3. **Game Data Management Module (Template + Full Stack)**
    - Frontend:
      - Game data control interface
      - Admin controls for game settings
@@ -160,7 +160,7 @@ The project consists of 10 modules in total. Both members contributed as full-st
      - Monitor game activity
      - Game management APIs
 
-4. **Leaderboard Management Module (Full Stack)**
+4. **Leaderboard Management Module (Template + Full Stack)**
    - Frontend:
      - Leaderboard control UI
      - Search/filter leaderboard
@@ -170,7 +170,7 @@ The project consists of 10 modules in total. Both members contributed as full-st
      - `/api/leaderboard` admin controls
      - Reset/update leaderboard functionality
 
-5. **Analytics & Reporting Module (Full Stack)**
+5. **Analytics & Reporting Module (Template + Full Stack)**
    - Frontend:
      - Admin analytics dashboard
      - Charts and statistics UI
