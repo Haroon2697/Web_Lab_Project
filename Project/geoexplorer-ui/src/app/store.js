@@ -1,7 +1,18 @@
 /**
  * Redux store configuration (Redux Toolkit).
- * Wire `Provider` in main.jsx when slices are implemented.
+ * Combines all Haroon feature slices into a single store.
  */
-export const storePlaceholder = {
-  note: 'Replace with configureStore from @reduxjs/toolkit',
-}
+import { configureStore } from '@reduxjs/toolkit'
+import authReducer from '../features/auth/authSlice'
+import gameReducer from '../features/game/gameSlice'
+import leaderboardReducer from '../features/leaderboard/leaderboardSlice'
+import userReducer from '../features/user/userSlice'
+
+export const store = configureStore({
+  reducer: {
+    auth: authReducer,
+    game: gameReducer,
+    leaderboard: leaderboardReducer,
+    user: userReducer,
+  },
+})

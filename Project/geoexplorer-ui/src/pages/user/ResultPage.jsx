@@ -1,4 +1,7 @@
 import { useLocation, Link, useNavigate } from 'react-router-dom'
+import MapSelector from '../../components/game/MapSelector'
+import { formatDistance, mapAccuracyBonus } from '../../utils/mapUtils'
+import { getCountryCoordinates } from '../../utils/countryCoords'
 
 // Country info mock — replace with backend countryData when wired
 const COUNTRY_INFO = {
@@ -23,10 +26,18 @@ export function ResultPage() {
   const difficulty = state?.difficulty ?? 'medium'
   const timeLeft = state?.timeLeft ?? 12
   const isCorrect = userGuess === correctCountry
+  const guessPosition = state?.guessPosition ?? null
+  const correctPosition = state?.correctPosition ?? getCountryCoordinates(correctCountry)
+  const distanceKm = typeof state?.distanceKm === 'number' ? state.distanceKm : null
+  const mapBonus = typeof state?.mapBonus === 'number'
+    ? state.mapBonus
+    : distanceKm != null ? mapAccuracyBonus(distanceKm) : 0
 
   const base = BASE_SCORE[difficulty] ?? 100
   const bonus = isCorrect ? timeLeft * 2 : 0
-  const totalScore = isCorrect ? base + bonus : 0
+  const backendScore = typeof state?.score === 'number' ? state.score : null
+  const computedScore = (isCorrect ? base + bonus : 0) + mapBonus
+  const totalScore = backendScore ?? computedScore
 
   const info = COUNTRY_INFO[correctCountry] ?? FALLBACK
 
@@ -85,6 +96,12 @@ export function ResultPage() {
                     <span className="text-geo-p20">Speed bonus ({timeLeft}s left)</span>
                     <span className="font-semibold text-geo-aqua">+{bonus}</span>
                   </div>
+                  {mapBonus > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-geo-p20">Map accuracy bonus</span>
+                      <span className="font-semibold text-geo-success">+{mapBonus}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -106,6 +123,27 @@ export function ResultPage() {
             </div>
           </div>
         </div>
+
+        {(guessPosition && correctPosition) && (
+          <div className="animate-slide-up delay-100 geo-card mb-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-black">Map Result</h2>
+              {distanceKm != null && (
+                <span className="text-sm font-semibold text-geo-aqua">
+                  Distance: {formatDistance(distanceKm)}
+                </span>
+              )}
+            </div>
+            <MapSelector
+              guessPosition={guessPosition}
+              correctPosition={correctPosition}
+              distance={distanceKm}
+              showResult
+              disabled
+              height="320px"
+            />
+          </div>
+        )}
 
         {/* ── Country Info card ─────────────────────── */}
         <div className="animate-slide-up delay-100 geo-card mb-6">

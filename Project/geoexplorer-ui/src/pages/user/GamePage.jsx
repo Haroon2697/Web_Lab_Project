@@ -1,15 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-
-// Mock data — replace with Redux dispatch(startGame()) when backend is ready
-const MOCK_SESSION = {
-  sessionId: 'mock_001',
-  imageUrl: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=1200&q=80',
-  options: ['France', 'Germany', 'Italy', 'Spain'],
-  correctCountry: 'France',
-  difficulty: 'medium',
-  timeLimit: 30,
-}
+import { useDispatch, useSelector } from 'react-redux'
+import { startGame, submitGuess, resetGame } from '../../features/game/gameSlice'
+import MapSelector from '../../components/game/MapSelector'
+import { haversineDistance, mapAccuracyBonus } from '../../utils/mapUtils'
+import { getCountryCoordinates } from '../../utils/countryCoords'
 
 const DIFFICULTY_OPTS = [
   { value: 'easy', label: '🟢 Easy', time: 45, points: '100 pts' },
@@ -19,43 +14,175 @@ const DIFFICULTY_OPTS = [
 
 export function GamePage() {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const { user } = useSelector((state) => state.auth)
+  const { session, result, loading, error } = useSelector((state) => state.game)
+
   const [phase, setPhase] = useState('select')
   const [difficulty, setDifficulty] = useState('medium')
-  const [session] = useState(MOCK_SESSION)
   const [guess, setGuess] = useState('')
+  const [guessPosition, setGuessPosition] = useState(null)
   const [timeLeft, setTimeLeft] = useState(30)
   const [imgLoaded, setImgLoaded] = useState(false)
+  const [imageUrl, setImageUrl] = useState('')
   const [hoveredOption, setHoveredOption] = useState(null)
   const intervalRef = useRef(null)
+  const hasAutoSubmittedRef = useRef(false)
 
   const diffCfg = DIFFICULTY_OPTS.find(d => d.value === difficulty) ?? DIFFICULTY_OPTS[1]
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user) navigate('/login')
+  }, [user, navigate])
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      dispatch(resetGame())
+    }
+  }, [dispatch])
+
+  // When session arrives from backend, switch to playing
+  useEffect(() => {
+    if (session && phase === 'loading') {
+      setPhase('playing')
+      setTimeLeft(session.timeLimit || diffCfg.time)
+      setImgLoaded(false)
+      setImageUrl(session.imageUrl || '')
+      setGuess('')
+      setGuessPosition(null)
+      hasAutoSubmittedRef.current = false
+    }
+  }, [session, phase, diffCfg.time])
+
+  // Ensure timer does not wait forever if an image host is slow.
+  useEffect(() => {
+    if (phase !== 'playing' || imgLoaded) return undefined
+    const id = setTimeout(() => setImgLoaded(true), 5000)
+    return () => clearTimeout(id)
+  }, [phase, imgLoaded])
+
+  // When result arrives, navigate to result page
+  useEffect(() => {
+    if (result) {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      navigate('/result', {
+        state: {
+          sessionId: result.sessionId,
+          userGuess: result.userGuess,
+          correctCountry: result.correctCountry,
+          score: result.score,
+          timeLeft: result.timeLeft,
+          difficulty: result.difficulty,
+          isCorrect: result.isCorrect,
+          guessPosition: result.guessPosition || result.guessLatlng || guessPosition || null,
+          correctPosition: result.correctPosition || result.correctLatlng || null,
+          distanceKm: result.distanceKm ?? result.distance ?? null,
+          mapBonus: result.mapBonus ?? result.distanceBonus ?? 0,
+        },
+      })
+    }
+  }, [result, navigate, guessPosition])
+
   // Start timer when playing
   useEffect(() => {
-    if (phase !== 'playing') return
-    setTimeLeft(diffCfg.time)
+    if (phase !== 'playing' || !imgLoaded) return
     intervalRef.current = setInterval(() => {
       setTimeLeft(t => {
         if (t <= 1) {
           if (intervalRef.current) clearInterval(intervalRef.current)
-          navigate('/result', { state: { sessionId: session.sessionId, userGuess: guess || '', correctCountry: session.correctCountry, score: 0, timeLeft: 0, difficulty } })
+          // Avoid setState chain during render + avoid duplicate auto-submit
+          if (!hasAutoSubmittedRef.current) {
+            hasAutoSubmittedRef.current = true
+            setTimeout(() => handleAutoSubmit(), 0)
+          }
           return 0
         }
         return t - 1
       })
     }, 1000)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [phase])
+  }, [phase, imgLoaded])
 
-  const timerPct = (timeLeft / diffCfg.time) * 100
+  const timerPct = (timeLeft / (session?.timeLimit || diffCfg.time)) * 100
   const timerColor = timerPct > 50 ? 'bg-geo-success' : timerPct > 25 ? 'bg-geo-warning animate-timer-pulse' : 'bg-geo-error animate-timer-pulse'
 
+  const handleStartGame = () => {
+    setPhase('loading')
+    dispatch(startGame(difficulty))
+  }
+
+  const handleAutoSubmit = () => {
+    if (!session) return
+    const correctPosition =
+      session.correctPosition ||
+      (session.correctLat != null && session.correctLng != null
+        ? { lat: session.correctLat, lng: session.correctLng }
+        : getCountryCoordinates(session.correctCountry))
+
+    const distanceKm =
+      guessPosition && correctPosition
+        ? haversineDistance(
+            guessPosition.lat,
+            guessPosition.lng,
+            correctPosition.lat,
+            correctPosition.lng,
+          )
+        : null
+    const mapBonus = distanceKm != null ? mapAccuracyBonus(distanceKm) : 0
+
+    dispatch(submitGuess({
+      correctCountry: session.correctCountry,
+      userGuess: guess || '',
+      imageUrl: session.imageUrl,
+      imageCredit: session.imageCredit || '',
+      options: session.options,
+      difficulty: session.difficulty || difficulty,
+      timeLimit: session.timeLimit || diffCfg.time,
+      timeLeft: 0,
+      guessPosition,
+      correctPosition,
+      distanceKm,
+      mapBonus,
+    }))
+  }
+
   const handleSubmit = () => {
-    if (!guess) return
+    if (!guess || !session || !guessPosition) return
     if (intervalRef.current) clearInterval(intervalRef.current)
-    navigate('/result', {
-      state: { sessionId: session.sessionId, userGuess: guess, correctCountry: session.correctCountry, score: 0, timeLeft, difficulty },
-    })
+    const correctPosition =
+      session.correctPosition ||
+      (session.correctLat != null && session.correctLng != null
+        ? { lat: session.correctLat, lng: session.correctLng }
+        : getCountryCoordinates(session.correctCountry))
+
+    const distanceKm =
+      correctPosition
+        ? haversineDistance(
+            guessPosition.lat,
+            guessPosition.lng,
+            correctPosition.lat,
+            correctPosition.lng,
+          )
+        : null
+    const mapBonus = distanceKm != null ? mapAccuracyBonus(distanceKm) : 0
+
+    dispatch(submitGuess({
+      correctCountry: session.correctCountry,
+      userGuess: guess,
+      imageUrl: session.imageUrl,
+      imageCredit: session.imageCredit || '',
+      options: session.options,
+      difficulty: session.difficulty || difficulty,
+      timeLimit: session.timeLimit || diffCfg.time,
+      timeLeft,
+      guessPosition,
+      correctPosition,
+      distanceKm,
+      mapBonus,
+    }))
   }
 
   /* ── DIFFICULTY SELECTOR ─────────────────────────────────────── */
@@ -100,14 +227,39 @@ export function GamePage() {
               ))}
             </div>
 
+            {error && (
+              <div className="mb-4 rounded-xl border border-geo-error/30 bg-geo-error/10 px-4 py-3 text-sm text-geo-error">
+                ⚠ {error}
+              </div>
+            )}
+
             <button
               id="start-game-btn"
-              onClick={() => { setPhase('playing'); setImgLoaded(false) }}
-              className="btn-primary w-full !py-4 !text-lg"
+              onClick={handleStartGame}
+              disabled={loading}
+              className="btn-primary w-full py-4! text-lg!"
             >
-              🚀 Start Game
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin block" />
+                  Loading…
+                </span>
+              ) : '🚀 Start Game'}
             </button>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  /* ── LOADING ────────────────────────────────────────────────── */
+  if (phase === 'loading') {
+    return (
+      <div className="flex min-h-[calc(100dvh-14rem)] w-full items-center justify-center">
+        <div className="text-center">
+          <div className="h-12 w-12 rounded-full border-2 border-geo-p50/30 border-t-geo-p50 animate-spin mx-auto mb-4" />
+          <p className="text-geo-p10 text-lg">Preparing your game session...</p>
+          <p className="text-geo-p20 text-sm mt-2">Fetching a mystery location</p>
         </div>
       </div>
     )
@@ -122,7 +274,7 @@ export function GamePage() {
           {/* Score */}
           <div className="flex items-center gap-2">
             <span className="text-geo-p20 text-sm">Score</span>
-            <span className="text-xl font-black text-geo-warning">1,240</span>
+            <span className="text-xl font-black text-geo-warning">{user?.totalScore?.toLocaleString() || '0'}</span>
           </div>
 
           {/* Timer */}
@@ -143,8 +295,8 @@ export function GamePage() {
 
           {/* Player */}
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-geo-p50 text-sm font-bold">H</div>
-            <span className="text-sm font-medium text-geo-p10 hidden sm:block">Haroon</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-geo-p50 text-sm font-bold">{user?.name?.[0] || 'H'}</div>
+            <span className="text-sm font-medium text-geo-p10 hidden sm:block">{user?.name || 'Player'}</span>
             <span className={`geo-badge ${
               difficulty === 'easy' ? 'bg-geo-success/20 text-geo-success' :
               difficulty === 'medium' ? 'bg-geo-warning/20 text-geo-warning' :
@@ -171,23 +323,30 @@ export function GamePage() {
           )}
 
           <img
-            src={session.imageUrl}
+            src={imageUrl}
             alt="Mystery Location"
+            loading="eager"
+            decoding="async"
             onLoad={() => setImgLoaded(true)}
+            onError={() => {
+              const backup = `https://picsum.photos/seed/${encodeURIComponent(session?.correctCountry || 'geoexplorer')}/1200/800`
+              if (imageUrl !== backup) {
+                setImageUrl(backup)
+                return
+              }
+              setImgLoaded(true)
+            }}
             className={`h-full w-full object-cover transition-opacity duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
           />
 
           {/* Image overlay info */}
           {imgLoaded && (
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent p-6">
+            <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/70 via-black/20 to-transparent p-6">
               <div className="flex items-end justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-widest text-geo-p20 mb-1">Mystery Location</p>
-                  <p className="text-white font-semibold">📸 Photo from Unsplash · Study the clues</p>
+                  <p className="text-white font-semibold">📸 Photo from {session?.imageCredit || 'Unsplash'} · Study the clues</p>
                 </div>
-                <button className="glass rounded-xl px-3 py-2 text-xs font-medium text-geo-aqua hover:text-white transition-colors">
-                  💡 Use Hint
-                </button>
               </div>
             </div>
           )}
@@ -207,7 +366,7 @@ export function GamePage() {
             <div>
               <p className="mb-3 text-sm font-semibold text-geo-p10 uppercase tracking-wider">Select Country</p>
               <div className="grid grid-cols-1 gap-2">
-                {session.options.map((opt) => (
+                {(session?.options || []).map((opt) => (
                   <button
                     key={opt}
                     id={`option-${opt.toLowerCase().replace(/\s+/g, '-')}`}
@@ -221,7 +380,7 @@ export function GamePage() {
                     }`}
                   >
                     {/* Selection indicator */}
-                    <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
                       guess === opt
                         ? 'border-geo-p50 bg-geo-p50'
                         : 'border-geo-p20/40'
@@ -239,19 +398,46 @@ export function GamePage() {
               </div>
             </div>
 
+            {/* Interactive map guess */}
+            <div>
+              <p className="mb-3 text-sm font-semibold text-geo-p10 uppercase tracking-wider">
+                Click Exact Location
+              </p>
+              <MapSelector
+                guessPosition={guessPosition}
+                onPositionSelect={setGuessPosition}
+                disabled={loading}
+                height="300px"
+              />
+              <p className="mt-2 text-xs text-geo-p20">
+                {guessPosition
+                  ? `Pinned at ${guessPosition.lat.toFixed(2)}, ${guessPosition.lng.toFixed(2)}`
+                  : 'Click anywhere on the map to place your guess marker'}
+              </p>
+            </div>
+
             {/* Submit */}
             <div className="mt-auto space-y-3">
               <button
                 id="submit-answer-btn"
                 onClick={handleSubmit}
-                disabled={!guess}
+                disabled={!guess || !guessPosition || loading}
                 className={`w-full rounded-xl py-4 text-base font-bold transition-all duration-200 ${
-                  guess
+                  guess && guessPosition
                     ? 'btn-primary'
                     : 'cursor-not-allowed bg-geo-p20/10 text-geo-p20 border border-geo-p20/20'
                 }`}
               >
-                {guess ? `Submit — ${guess} →` : 'Select a Country First'}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin block" />
+                    Submitting…
+                  </span>
+                ) : !guess
+                  ? 'Select a Country First'
+                  : !guessPosition
+                    ? 'Pin Location on Map First'
+                    : `Submit — ${guess} →`}
               </button>
 
               <Link to="/" className="block text-center text-sm text-geo-p20 hover:text-white transition-colors">

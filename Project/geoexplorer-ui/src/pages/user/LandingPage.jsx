@@ -59,8 +59,8 @@ export function LandingPage() {
 
           {/* Auth buttons */}
           <div className="flex items-center gap-3">
-            <Link to="/login" className="btn-secondary !py-2 !px-5 !text-sm">
-              Sign In
+            <Link to="/join" className="btn-secondary !py-2 !px-5 !text-sm">
+              Join
             </Link>
             <Link to="/signup" className="btn-primary !py-2 !px-5 !text-sm">
               Play Free

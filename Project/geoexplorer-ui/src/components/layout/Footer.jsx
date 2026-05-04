@@ -2,45 +2,43 @@ import { Link, NavLink } from 'react-router-dom'
 import { NAV_LINK_GROUPS, PROJECT_REPO_URL, ROUTES } from '../../utils/constants'
 
 const footerLink = ({ isActive }) =>
-  `text-xs transition sm:text-sm ${isActive ? 'text-geo-aqua' : 'text-geo-p10 hover:text-white'}`
+  `text-sm transition ${isActive ? 'text-geo-p50' : 'text-geo-p20 hover:text-geo-p10'}`
 
 export function Footer() {
   const year = new Date().getFullYear()
+  const mainLinks = NAV_LINK_GROUPS.find((group) => group.title === 'User')?.links ?? []
 
   return (
-    <footer className="border-t border-geo-p20/30 bg-geo-card/80">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <div className="mb-6 flex flex-col gap-6 sm:flex-row sm:justify-between">
+    <footer className="border-t border-[#e2e8f0] bg-white">
+      <div className="mx-auto w-full max-w-[1440px] px-6 py-10 lg:px-20">
+        <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-bold text-white">GeoExplorer</p>
-            <p className="mt-1 max-w-xs text-xs text-geo-p10">
-              MERN semester project — interactive geography guessing. Navigation matches the header on every page.
+            <p className="text-base font-extrabold text-geo-p10">GeoExplorer</p>
+            <p className="mt-2 max-w-sm text-sm text-geo-p20">
+              Interactive geography guessing with modern gameplay, map-based answers, and competitive leaderboards.
             </p>
           </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
-            <Link to={ROUTES.home} className="text-geo-p50 hover:text-geo-aqua">
-              Back to home
-            </Link>
-            <a href={PROJECT_REPO_URL} target="_blank" rel="noreferrer" className="text-geo-p50 hover:text-geo-aqua">
-              Repository
-            </a>
+          <div className="flex flex-wrap gap-4">
+            <NavLink to={ROUTES.home} className={footerLink}>Home</NavLink>
+            <NavLink to={ROUTES.leaderboard} className={footerLink}>Leaderboard</NavLink>
+            <NavLink to={ROUTES.profile} className={footerLink}>About</NavLink>
+            <Link to={ROUTES.login} className="text-sm text-geo-p20 hover:text-geo-p10">Login</Link>
+            <a href={PROJECT_REPO_URL} target="_blank" rel="noreferrer" className="text-sm text-geo-p20 hover:text-geo-p10">Repository</a>
           </div>
         </div>
 
-        {NAV_LINK_GROUPS.map((group) => (
-          <div key={`footer-${group.title}`} className="mb-6 border-t border-geo-p20/20 pt-6 first:border-t-0 first:pt-0">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-geo-p20">{group.title}</p>
-            <nav className="flex flex-wrap gap-x-4 gap-y-2" aria-label={`${group.title} footer links`}>
-              {group.links.map((link) => (
-                <NavLink key={link.to} to={link.to} end={link.to === ROUTES.home} className={footerLink}>
-                  {link.label}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-        ))}
+        <div className="mb-8 border-t border-[#e2e8f0] pt-6">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-geo-p20">All routes</p>
+          <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="All footer links">
+            {mainLinks.map((link) => (
+              <NavLink key={link.to} to={link.to} end={link.to === ROUTES.home} className={footerLink}>
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
 
-        <p className="border-t border-geo-p20/20 pt-6 text-center text-xs text-geo-p20">
+        <p className="border-t border-[#e2e8f0] pt-6 text-center text-xs text-geo-p20">
           © {year} GeoExplorer — FAST-NUCES Software Engineering
         </p>
       </div>

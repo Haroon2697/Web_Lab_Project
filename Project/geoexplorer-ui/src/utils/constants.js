@@ -1,6 +1,7 @@
 /** App-wide constants and route paths (single source of truth). */
 export const ROUTES = {
   home: '/',
+  join: '/join',
   login: '/login',
   signup: '/signup',
   game: '/game',
@@ -30,6 +31,7 @@ export const NAV_LINK_GROUPS = [
     title: 'User',
     links: [
       { to: ROUTES.home, label: 'Home' },
+      { to: ROUTES.join, label: 'Join' },
       { to: ROUTES.login, label: 'Login' },
       { to: ROUTES.signup, label: 'Signup' },
       { to: ROUTES.game, label: 'Game' },

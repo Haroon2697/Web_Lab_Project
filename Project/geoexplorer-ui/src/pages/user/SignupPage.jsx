@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { registerUser, clearError } from '../../features/auth/authSlice'
 
 const strengthLevels = [
   { label: 'Too Short', color: 'bg-geo-error', width: 'w-1/4' },
@@ -19,14 +21,31 @@ function getStrength(pw) {
 
 export function SignupPage() {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const { user, loading, error } = useSelector((state) => state.auth)
+
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
   const [showPass, setShowPass] = useState(false)
   const [errors, setErrors] = useState({})
-  const [loading, setLoading] = useState(false)
   const [agreed, setAgreed] = useState(false)
 
   const strength = getStrength(form.password)
   const strengthInfo = strengthLevels[strength]
+
+  // Redirect if logged in
+  useEffect(() => {
+    if (user) navigate('/game')
+  }, [user, navigate])
+
+  // Sync Redux error
+  useEffect(() => {
+    if (error) setErrors((prev) => ({ ...prev, general: error }))
+  }, [error])
+
+  // Clear Redux error on unmount
+  useEffect(() => {
+    return () => dispatch(clearError())
+  }, [dispatch])
 
   const validate = () => {
     const e = {}
@@ -47,9 +66,7 @@ export function SignupPage() {
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
     setErrors({})
-    setLoading(true)
-    // TODO: dispatch registerUser thunk
-    setTimeout(() => { setLoading(false); navigate('/game') }, 1400)
+    dispatch(registerUser({ name: form.name, email: form.email, password: form.password }))
   }
 
   const field = (key) =>
@@ -116,6 +133,14 @@ export function SignupPage() {
               Sign in →
             </Link>
           </p>
+
+          {/* General error */}
+          {errors.general && (
+            <div className="mb-6 flex items-center gap-3 rounded-xl border border-geo-error/30 bg-geo-error/10 px-4 py-3">
+              <span className="text-geo-error text-lg">⚠</span>
+              <span className="text-sm text-geo-error">{errors.general}</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             {/* Name */}

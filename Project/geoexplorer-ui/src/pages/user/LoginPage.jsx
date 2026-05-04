@@ -1,12 +1,31 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { loginUser, clearError } from '../../features/auth/authSlice'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const { user, loading, error } = useSelector((state) => state.auth)
+
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPass, setShowPass] = useState(false)
   const [errors, setErrors] = useState({})
-  const [loading, setLoading] = useState(false)
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) navigate('/game')
+  }, [user, navigate])
+
+  // Sync Redux error to local state
+  useEffect(() => {
+    if (error) setErrors((prev) => ({ ...prev, general: error }))
+  }, [error])
+
+  // Clear Redux error on unmount
+  useEffect(() => {
+    return () => dispatch(clearError())
+  }, [dispatch])
 
   const validate = () => {
     const e = {}
@@ -22,9 +41,7 @@ export function LoginPage() {
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
     setErrors({})
-    setLoading(true)
-    // TODO: dispatch loginUser thunk
-    setTimeout(() => { setLoading(false); navigate('/game') }, 1200)
+    dispatch(loginUser({ email: form.email, password: form.password }))
   }
 
   return (

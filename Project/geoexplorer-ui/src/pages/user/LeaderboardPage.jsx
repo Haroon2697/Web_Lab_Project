@@ -1,20 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-
-const MOCK_LB = [
-  { rank: 1, userId: 'u1', name: 'GlobeChampion', totalScore: 12450, gamesPlayed: 62, winRate: 84 },
-  { rank: 2, userId: 'u2', name: 'WorldWanderer', totalScore: 11820, gamesPlayed: 58, winRate: 81 },
-  { rank: 3, userId: 'u3', name: 'MapMaster99', totalScore: 10300, gamesPlayed: 55, winRate: 78 },
-  { rank: 4, userId: 'u4', name: 'TerraTracker', totalScore: 9870, gamesPlayed: 47, winRate: 74 },
-  { rank: 5, userId: 'u5', name: 'GeoNinja', totalScore: 8540, gamesPlayed: 43, winRate: 70 },
-  { rank: 6, userId: 'u6', name: 'CountryKing', totalScore: 7980, gamesPlayed: 41, winRate: 68 },
-  { rank: 7, userId: 'u7', name: 'Haroon Aziz', totalScore: 7240, gamesPlayed: 38, winRate: 65, isCurrentUser: true },
-  { rank: 8, userId: 'u8', name: 'AtlasAdmiral', totalScore: 6600, gamesPlayed: 35, winRate: 62 },
-  { rank: 9, userId: 'u9', name: 'RegionRanger', totalScore: 5900, gamesPlayed: 30, winRate: 58 },
-  { rank: 10, userId: 'u10', name: 'BorderBuster', totalScore: 5120, gamesPlayed: 28, winRate: 55 },
-  { rank: 11, userId: 'u11', name: 'CapitalCracker', totalScore: 4780, gamesPlayed: 25, winRate: 52 },
-  { rank: 12, userId: 'u12', name: 'ZoneMaster', totalScore: 4200, gamesPlayed: 22, winRate: 50 },
-]
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchLeaderboard, fetchMyRank } from '../../features/leaderboard/leaderboardSlice'
 
 const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' }
 const TOP3_GLOW = {
@@ -24,20 +11,28 @@ const TOP3_GLOW = {
 }
 
 export function LeaderboardPage() {
+  const dispatch = useDispatch()
+  const { players, myRank, loading } = useSelector((state) => state.leaderboard)
+  const { user } = useSelector((state) => state.auth)
+
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const PER_PAGE = 8
 
+  useEffect(() => {
+    dispatch(fetchLeaderboard(50))
+    if (user) dispatch(fetchMyRank())
+  }, [dispatch, user])
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return MOCK_LB
-    return MOCK_LB.filter(e => e.name.toLowerCase().includes(search.toLowerCase()))
-  }, [search])
+    if (!search.trim()) return players
+    return players.filter(e => e.name.toLowerCase().includes(search.toLowerCase()))
+  }, [search, players])
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE)
   const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
-  const top3 = MOCK_LB.slice(0, 3)
-  const currentUser = MOCK_LB.find(e => e.isCurrentUser)
+  const top3 = players.slice(0, 3)
 
   return (
     <div className="w-full py-6 sm:py-10">
@@ -55,55 +50,64 @@ export function LeaderboardPage() {
           <p className="text-geo-p10 text-lg">Top explorers competing for global geography supremacy.</p>
         </div>
 
+        {/* ── Loading skeleton ────────────────────────── */}
+        {loading && players.length === 0 && (
+          <div className="text-center py-20">
+            <div className="h-10 w-10 rounded-full border-2 border-geo-p50/30 border-t-geo-p50 animate-spin mx-auto mb-4" />
+            <p className="text-geo-p20">Loading leaderboard...</p>
+          </div>
+        )}
+
         {/* ── Top 3 podium ──────────────────────────── */}
-        <div className="mb-10 grid grid-cols-3 gap-4 animate-slide-up">
-          {/* 2nd place */}
-          <div className={`flex flex-col items-center rounded-2xl border p-5 pt-8 ${TOP3_GLOW[2]} mt-6`}>
-            <div className="text-3xl mb-2">🥈</div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-geo-p20/20 text-xl font-black text-geo-p20 mb-2">
-              {top3[1].name[0]}
+        {top3.length >= 3 && (
+          <div className="mb-10 grid grid-cols-3 gap-4 animate-slide-up">
+            {/* 2nd place */}
+            <div className={`flex flex-col items-center rounded-2xl border p-5 pt-8 ${TOP3_GLOW[2]} mt-6`}>
+              <div className="text-3xl mb-2">🥈</div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-geo-p20/20 text-xl font-black text-geo-p20 mb-2">
+                {top3[1].name[0]}
+              </div>
+              <p className="font-bold text-sm text-center leading-tight">{top3[1].name}</p>
+              <p className="text-geo-p20 text-xs mt-1">{top3[1].totalScore?.toLocaleString()} pts</p>
             </div>
-            <p className="font-bold text-sm text-center leading-tight">{top3[1].name}</p>
-            <p className="text-geo-p20 text-xs mt-1">{top3[1].totalScore.toLocaleString()} pts</p>
-          </div>
 
-          {/* 1st place */}
-          <div className={`flex flex-col items-center rounded-2xl border p-5 ${TOP3_GLOW[1]} relative overflow-hidden`}>
-            {/* Crown glow */}
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 h-20 w-20 rounded-full bg-geo-warning/30 blur-xl" />
-            <div className="relative text-4xl mb-2">🥇</div>
-            <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-geo-warning bg-geo-warning/20 text-2xl font-black text-geo-warning mb-2">
-              {top3[0].name[0]}
+            {/* 1st place */}
+            <div className={`flex flex-col items-center rounded-2xl border p-5 ${TOP3_GLOW[1]} relative overflow-hidden`}>
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 h-20 w-20 rounded-full bg-geo-warning/30 blur-xl" />
+              <div className="relative text-4xl mb-2">🥇</div>
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-geo-warning bg-geo-warning/20 text-2xl font-black text-geo-warning mb-2">
+                {top3[0].name[0]}
+              </div>
+              <p className="font-black text-base text-center text-geo-warning leading-tight">{top3[0].name}</p>
+              <p className="text-geo-warning/70 text-sm mt-1 font-bold">{top3[0].totalScore?.toLocaleString()} pts</p>
+              <span className="mt-2 geo-badge bg-geo-warning/20 text-geo-warning border border-geo-warning/30 text-[10px]">CHAMPION</span>
             </div>
-            <p className="font-black text-base text-center text-geo-warning leading-tight">{top3[0].name}</p>
-            <p className="text-geo-warning/70 text-sm mt-1 font-bold">{top3[0].totalScore.toLocaleString()} pts</p>
-            <span className="mt-2 geo-badge bg-geo-warning/20 text-geo-warning border border-geo-warning/30 text-[10px]">CHAMPION</span>
-          </div>
 
-          {/* 3rd place */}
-          <div className={`flex flex-col items-center rounded-2xl border p-5 pt-8 ${TOP3_GLOW[3]} mt-6`}>
-            <div className="text-3xl mb-2">🥉</div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-geo-hint/20 text-xl font-black text-geo-hint mb-2">
-              {top3[2].name[0]}
+            {/* 3rd place */}
+            <div className={`flex flex-col items-center rounded-2xl border p-5 pt-8 ${TOP3_GLOW[3]} mt-6`}>
+              <div className="text-3xl mb-2">🥉</div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-geo-hint/20 text-xl font-black text-geo-hint mb-2">
+                {top3[2].name[0]}
+              </div>
+              <p className="font-bold text-sm text-center leading-tight">{top3[2].name}</p>
+              <p className="text-geo-p20 text-xs mt-1">{top3[2].totalScore?.toLocaleString()} pts</p>
             </div>
-            <p className="font-bold text-sm text-center leading-tight">{top3[2].name}</p>
-            <p className="text-geo-p20 text-xs mt-1">{top3[2].totalScore.toLocaleString()} pts</p>
           </div>
-        </div>
+        )}
 
         {/* ── Your position highlight ───────────────── */}
-        {currentUser && (
+        {myRank && (
           <div className="mb-6 animate-slide-up delay-100 rounded-2xl border border-geo-p50/30 bg-geo-p50/10 px-5 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-geo-p50 font-black text-white">H</div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-geo-p50 font-black text-white">{user?.name?.[0] || 'H'}</div>
               <div>
                 <p className="font-bold text-white">Your Rank</p>
                 <p className="text-xs text-geo-p20">Keep playing to move up!</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-black text-geo-p50">#{currentUser.rank}</p>
-              <p className="text-sm text-geo-p20">{currentUser.totalScore.toLocaleString()} pts</p>
+              <p className="text-2xl font-black text-geo-p50">#{myRank.rank}</p>
+              <p className="text-sm text-geo-p20">{myRank.totalScore?.toLocaleString()} pts</p>
             </div>
           </div>
         )}
@@ -136,71 +140,74 @@ export function LeaderboardPage() {
             <span className="col-span-1">Rank</span>
             <span className="col-span-5">Player</span>
             <span className="col-span-2 text-center">Games</span>
-            <span className="col-span-2 text-center">Win Rate</span>
+            <span className="col-span-2 text-center">Avg</span>
             <span className="col-span-2 text-right">Score</span>
           </div>
 
           {/* Rows */}
           {paged.length === 0 ? (
-            <div className="py-16 text-center text-geo-p20">No players match "{search}"</div>
-          ) : paged.map((entry, i) => (
-            <div
-              key={entry.userId}
-              className={`grid grid-cols-12 items-center px-6 py-4 border-b border-geo-p20/10 last:border-0 transition-colors hover:bg-geo-p50/5 ${
-                entry.isCurrentUser ? 'bg-geo-p50/10' : ''
-              } animate-fade-in`}
-              style={{ animationDelay: `${i * 40}ms` }}
-            >
-              {/* Rank */}
-              <div className="col-span-1">
-                {entry.rank <= 3 ? (
-                  <span className="text-xl">{MEDAL[entry.rank]}</span>
-                ) : (
-                  <span className={`text-sm font-bold ${entry.isCurrentUser ? 'text-geo-p50' : 'text-geo-p20'}`}>
-                    #{entry.rank}
-                  </span>
-                )}
-              </div>
-
-              {/* Player */}
-              <div className="col-span-5 flex items-center gap-3">
-                <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-black flex-shrink-0 ${
-                  entry.rank === 1 ? 'bg-geo-warning/20 text-geo-warning border border-geo-warning/40' :
-                  entry.isCurrentUser ? 'bg-geo-p50 text-white' :
-                  'bg-geo-p20/10 text-geo-p20'
-                }`}>
-                  {entry.name[0]}
-                </div>
-                <div>
-                  <span className={`font-semibold text-sm ${entry.isCurrentUser ? 'text-geo-p50' : entry.rank <= 3 ? 'text-white' : 'text-geo-p10'}`}>
-                    {entry.name}
-                  </span>
-                  {entry.isCurrentUser && (
-                    <span className="ml-2 geo-badge bg-geo-p50/20 text-geo-p50 border border-geo-p50/30 text-[10px]">You</span>
+            <div className="py-16 text-center text-geo-p20">
+              {players.length === 0 ? 'No players yet — be the first!' : `No players match "${search}"`}
+            </div>
+          ) : paged.map((entry, i) => {
+            const isMe = user && entry._id === user._id
+            const avg = entry.gamesPlayed > 0 ? Math.round(entry.totalScore / entry.gamesPlayed) : 0
+            return (
+              <div
+                key={entry._id || i}
+                className={`grid grid-cols-12 items-center px-6 py-4 border-b border-geo-p20/10 last:border-0 transition-colors hover:bg-geo-p50/5 ${
+                  isMe ? 'bg-geo-p50/10' : ''
+                } animate-fade-in`}
+                style={{ animationDelay: `${i * 40}ms` }}
+              >
+                {/* Rank */}
+                <div className="col-span-1">
+                  {entry.rank <= 3 ? (
+                    <span className="text-xl">{MEDAL[entry.rank]}</span>
+                  ) : (
+                    <span className={`text-sm font-bold ${isMe ? 'text-geo-p50' : 'text-geo-p20'}`}>
+                      #{entry.rank}
+                    </span>
                   )}
                 </div>
-              </div>
 
-              {/* Games */}
-              <div className="col-span-2 text-center text-sm text-geo-p20">{entry.gamesPlayed}</div>
+                {/* Player */}
+                <div className="col-span-5 flex items-center gap-3">
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-black flex-shrink-0 ${
+                    entry.rank === 1 ? 'bg-geo-warning/20 text-geo-warning border border-geo-warning/40' :
+                    isMe ? 'bg-geo-p50 text-white' :
+                    'bg-geo-p20/10 text-geo-p20'
+                  }`}>
+                    {entry.name[0]}
+                  </div>
+                  <div>
+                    <span className={`font-semibold text-sm ${isMe ? 'text-geo-p50' : entry.rank <= 3 ? 'text-white' : 'text-geo-p10'}`}>
+                      {entry.name}
+                    </span>
+                    {isMe && (
+                      <span className="ml-2 geo-badge bg-geo-p50/20 text-geo-p50 border border-geo-p50/30 text-[10px]">You</span>
+                    )}
+                  </div>
+                </div>
 
-              {/* Win rate */}
-              <div className="col-span-2 text-center">
-                <span className={`text-sm font-semibold ${
-                  entry.winRate >= 80 ? 'text-geo-success' :
-                  entry.winRate >= 60 ? 'text-geo-warning' : 'text-geo-p10'
-                }`}>{entry.winRate}%</span>
-              </div>
+                {/* Games */}
+                <div className="col-span-2 text-center text-sm text-geo-p20">{entry.gamesPlayed}</div>
 
-              {/* Score */}
-              <div className={`col-span-2 text-right font-black text-base ${
-                entry.rank === 1 ? 'text-geo-warning' :
-                entry.isCurrentUser ? 'text-geo-p50' : 'text-white'
-              }`}>
-                {entry.totalScore.toLocaleString()}
+                {/* Avg score */}
+                <div className="col-span-2 text-center">
+                  <span className="text-sm font-semibold text-geo-p10">{avg}</span>
+                </div>
+
+                {/* Score */}
+                <div className={`col-span-2 text-right font-black text-base ${
+                  entry.rank === 1 ? 'text-geo-warning' :
+                  isMe ? 'text-geo-p50' : 'text-white'
+                }`}>
+                  {entry.totalScore?.toLocaleString()}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* ── Pagination ────────────────────────────── */}

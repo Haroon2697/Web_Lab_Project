@@ -1,16 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-
-const MOCK_HISTORY = [
-  { id: '1', imageUrl: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=200&q=60', correctCountry: 'France', userGuess: 'France', isCorrect: true, score: 224, timeLeft: 12, difficulty: 'medium', date: '2026-04-17' },
-  { id: '2', imageUrl: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=200&q=60', correctCountry: 'India', userGuess: 'Pakistan', isCorrect: false, score: 0, timeLeft: 0, difficulty: 'hard', date: '2026-04-17' },
-  { id: '3', imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&q=60', correctCountry: 'Switzerland', userGuess: 'Switzerland', isCorrect: true, score: 130, timeLeft: 15, difficulty: 'easy', date: '2026-04-16' },
-  { id: '4', imageUrl: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=200&q=60', correctCountry: 'Indonesia', userGuess: 'Thailand', isCorrect: false, score: 0, timeLeft: 0, difficulty: 'easy', date: '2026-04-16' },
-  { id: '5', imageUrl: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=200&q=60', correctCountry: 'Italy', userGuess: 'Italy', isCorrect: true, score: 346, timeLeft: 8, difficulty: 'hard', date: '2026-04-15' },
-  { id: '6', imageUrl: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=200&q=60', correctCountry: 'Japan', userGuess: 'Japan', isCorrect: true, score: 260, timeLeft: 30, difficulty: 'medium', date: '2026-04-15' },
-  { id: '7', imageUrl: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=200&q=60', correctCountry: 'Maldives', userGuess: 'Sri Lanka', isCorrect: false, score: 0, timeLeft: 0, difficulty: 'hard', date: '2026-04-14' },
-  { id: '8', imageUrl: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=200&q=60', correctCountry: 'Italy', userGuess: 'Italy', isCorrect: true, score: 118, timeLeft: 9, difficulty: 'easy', date: '2026-04-14' },
-]
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchHistory } from '../../features/game/gameSlice'
 
 const DIFF_COLORS = {
   easy: 'bg-geo-success/15 text-geo-success border-geo-success/30',
@@ -19,32 +10,40 @@ const DIFF_COLORS = {
 }
 
 export function GameHistoryPage() {
+  const dispatch = useDispatch()
+  const { history, historyTotal, loading } = useSelector((state) => state.game)
+
   const [diffFilter, setDiffFilter] = useState('all')
   const [resultFilter, setResultFilter] = useState('all')
   const [sortBy, setSortBy] = useState('date')
   const [page, setPage] = useState(1)
   const PER_PAGE = 5
 
+  // Fetch all history on mount
+  useEffect(() => {
+    dispatch(fetchHistory({ limit: 100, sort: '-createdAt' }))
+  }, [dispatch])
+
   const filtered = useMemo(() => {
-    let data = [...MOCK_HISTORY]
+    let data = [...history]
     if (diffFilter !== 'all') data = data.filter(h => h.difficulty === diffFilter)
     if (resultFilter === 'correct') data = data.filter(h => h.isCorrect)
     if (resultFilter === 'wrong') data = data.filter(h => !h.isCorrect)
     if (sortBy === 'score') data.sort((a, b) => b.score - a.score)
-    else data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    else data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     return data
-  }, [diffFilter, resultFilter, sortBy])
+  }, [history, diffFilter, resultFilter, sortBy])
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE)
   const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   const stats = {
-    total: MOCK_HISTORY.length,
-    correct: MOCK_HISTORY.filter(h => h.isCorrect).length,
-    totalScore: MOCK_HISTORY.reduce((s, h) => s + h.score, 0),
-    best: Math.max(...MOCK_HISTORY.map(h => h.score)),
+    total: history.length,
+    correct: history.filter(h => h.isCorrect).length,
+    totalScore: history.reduce((s, h) => s + h.score, 0),
+    best: history.length > 0 ? Math.max(...history.map(h => h.score)) : 0,
   }
-  const accuracy = Math.round((stats.correct / stats.total) * 100)
+  const accuracy = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0
 
   return (
     <div className="w-full py-6 sm:py-10">
@@ -60,6 +59,14 @@ export function GameHistoryPage() {
             🎮 New Game
           </Link>
         </div>
+
+        {/* ── Loading ─────────────────────────────────── */}
+        {loading && history.length === 0 && (
+          <div className="text-center py-20">
+            <div className="h-10 w-10 rounded-full border-2 border-geo-p50/30 border-t-geo-p50 animate-spin mx-auto mb-4" />
+            <p className="text-geo-p20">Loading game history...</p>
+          </div>
+        )}
 
         {/* ── Stats strip ───────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 animate-slide-up">
@@ -160,12 +167,19 @@ export function GameHistoryPage() {
           {paged.length === 0 ? (
             <div className="geo-card text-center py-16">
               <div className="text-5xl mb-4">🔍</div>
-              <p className="text-xl font-bold text-geo-p10">No games match your filters</p>
-              <p className="text-geo-p20 mt-2 text-sm">Try adjusting the difficulty or result filter</p>
+              <p className="text-xl font-bold text-geo-p10">
+                {history.length === 0 ? 'No games played yet' : 'No games match your filters'}
+              </p>
+              <p className="text-geo-p20 mt-2 text-sm">
+                {history.length === 0 ? 'Play your first game to see your history!' : 'Try adjusting the difficulty or result filter'}
+              </p>
+              {history.length === 0 && (
+                <Link to="/game" className="btn-primary mt-4 inline-block !py-2 !px-6">🎮 Play Now</Link>
+              )}
             </div>
           ) : paged.map((entry, i) => (
             <div
-              key={entry.id}
+              key={entry._id || i}
               className={`group flex items-center gap-4 rounded-2xl border p-4 transition-all duration-200 hover:border-geo-p50/30 hover:-translate-y-0.5 hover:shadow-lg ${
                 entry.isCorrect
                   ? 'border-geo-success/15 bg-geo-success/[0.03]'
@@ -187,7 +201,7 @@ export function GameHistoryPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                   <span className="font-bold text-white">{entry.correctCountry}</span>
-                  <span className={`geo-badge border text-[10px] ${DIFF_COLORS[entry.difficulty]}`}>
+                  <span className={`geo-badge border text-[10px] ${DIFF_COLORS[entry.difficulty] || ''}`}>
                     {entry.difficulty}
                   </span>
                 </div>
@@ -197,7 +211,9 @@ export function GameHistoryPage() {
                     {entry.userGuess}
                   </span>
                 </div>
-                <div className="text-xs text-geo-p20/70 mt-0.5">{entry.date}</div>
+                <div className="text-xs text-geo-p20/70 mt-0.5">
+                  {entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : ''}
+                </div>
               </div>
 
               {/* Score */}

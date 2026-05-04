@@ -14,12 +14,14 @@ import { GameHistoryPage } from './pages/user/GameHistoryPage'
 import { LandingPage } from './pages/user/LandingPage'
 import { LeaderboardPage } from './pages/user/LeaderboardPage'
 import { ProfilePage } from './pages/user/ProfilePage'
+import { ChoosePanelPage } from './pages/ChoosePanelPage'
 import { ROUTES } from './utils/constants'
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path={ROUTES.home} element={<LandingPage />} />
+      <Route path={ROUTES.join} element={<ChoosePanelPage />} />
       <Route path={ROUTES.login} element={<Login />} />
       <Route path={ROUTES.signup} element={<Signup />} />
       <Route path={ROUTES.game} element={<GamePage />} />
