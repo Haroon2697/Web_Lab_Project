@@ -4,6 +4,8 @@
  */
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { startGameAPI, submitGuessAPI, getHistoryAPI } from './gameService'
+import { fetchProfile } from '../user/userSlice'
+import { fetchMyRank } from '../leaderboard/leaderboardSlice'
 
 /* ── Async Thunks ──────────────────────────────────────────── */
 
@@ -20,9 +22,13 @@ export const startGame = createAsyncThunk(
 
 export const submitGuess = createAsyncThunk(
   'game/submit',
-  async (payload, { rejectWithValue }) => {
+  async (payload, { rejectWithValue, dispatch }) => {
     try {
-      return await submitGuessAPI(payload)
+      const result = await submitGuessAPI(payload)
+      // Keep UI in sync immediately after a game.
+      dispatch(fetchProfile())
+      dispatch(fetchMyRank())
+      return result
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to submit guess')
     }

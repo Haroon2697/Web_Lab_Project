@@ -3,16 +3,6 @@ import MapSelector from '../../components/game/MapSelector'
 import { formatDistance, mapAccuracyBonus } from '../../utils/mapUtils'
 import { getCountryCoordinates } from '../../utils/countryCoords'
 
-// Country info mock — replace with backend countryData when wired
-const COUNTRY_INFO = {
-  France: { flag: '🇫🇷', capital: 'Paris', region: 'Western Europe', population: '68 million', fun: 'France is the most visited country in the world.' },
-  Germany: { flag: '🇩🇪', capital: 'Berlin', region: 'Western Europe', population: '84 million', fun: 'Germany has over 1,500 types of beer brewed within its borders.' },
-  Italy: { flag: '🇮🇹', capital: 'Rome', region: 'Southern Europe', population: '60 million', fun: 'Italy has more UNESCO World Heritage Sites than any other country.' },
-  Spain: { flag: '🇪🇸', capital: 'Madrid', region: 'Southern Europe', population: '47 million', fun: 'Spain is home to La Tomatina, the world\'s biggest food fight.' },
-}
-
-const FALLBACK = { flag: '🌍', capital: '—', region: '—', population: '—', fun: '—' }
-
 const BASE_SCORE = { easy: 100, medium: 200, hard: 300 }
 
 export function ResultPage() {
@@ -25,7 +15,10 @@ export function ResultPage() {
   const correctCountry = state?.correctCountry ?? 'France'
   const difficulty = state?.difficulty ?? 'medium'
   const timeLeft = state?.timeLeft ?? 12
-  const isCorrect = userGuess === correctCountry
+  const isCorrect =
+    typeof state?.isCorrect === 'boolean'
+      ? state.isCorrect
+      : userGuess === correctCountry
   const guessPosition = state?.guessPosition ?? null
   const correctPosition = state?.correctPosition ?? getCountryCoordinates(correctCountry)
   const distanceKm = typeof state?.distanceKm === 'number' ? state.distanceKm : null
@@ -39,7 +32,16 @@ export function ResultPage() {
   const computedScore = (isCorrect ? base + bonus : 0) + mapBonus
   const totalScore = backendScore ?? computedScore
 
-  const info = COUNTRY_INFO[correctCountry] ?? FALLBACK
+  const newAchievements = Array.isArray(state?.newAchievements) ? state.newAchievements : []
+  const currentStreak = typeof state?.currentStreak === 'number' ? state.currentStreak : null
+
+  const meta = state?.countryMeta || null
+  const capital = meta?.capital || '—'
+  const region = meta?.region || meta?.subregion || '—'
+  const population =
+    typeof meta?.population === 'number'
+      ? meta.population.toLocaleString()
+      : '—'
 
   return (
     <div className="w-full py-6 sm:py-10">
@@ -51,6 +53,38 @@ export function ResultPage() {
       </div>
 
       <div className="relative mx-auto max-w-3xl">
+
+        {/* ── Achievements / streak feedback ───────────── */}
+        {(newAchievements.length > 0 || currentStreak != null) && (
+          <div className="mb-6 animate-slide-up">
+            <div className="geo-card p-4! border-geo-warning/30 bg-geo-warning/5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  {newAchievements.length > 0 ? (
+                    <>
+                      <p className="text-xs font-semibold uppercase tracking-widest text-geo-warning mb-1">Achievement Unlocked</p>
+                      <div className="flex flex-wrap gap-2">
+                        {newAchievements.map((a) => (
+                          <span key={a} className="geo-badge bg-geo-warning/20 text-geo-warning border border-geo-warning/30 text-[11px]">
+                            🏆 {a}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-geo-p10 font-semibold">Progress updated.</p>
+                  )}
+                </div>
+                {currentStreak != null && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-geo-p20">Current streak</span>
+                    <span className="text-lg font-black text-geo-hint">🔥 {currentStreak}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Result hero ──────────────────────────── */}
         <div className={`animate-bounce-in geo-card mb-6 text-center overflow-hidden relative ${
@@ -148,18 +182,22 @@ export function ResultPage() {
         {/* ── Country Info card ─────────────────────── */}
         <div className="animate-slide-up delay-100 geo-card mb-6">
           <div className="flex items-center gap-3 mb-5">
-            <span className="text-4xl">{info.flag}</span>
+            {meta?.flag ? (
+              <img src={meta.flag} alt={`${correctCountry} flag`} className="h-10 w-10 rounded-full object-cover border border-geo-p20/20" />
+            ) : (
+              <span className="text-4xl">🌍</span>
+            )}
             <div>
               <h2 className="text-xl font-black">{correctCountry}</h2>
-              <p className="text-geo-p20 text-sm">{info.region}</p>
+              <p className="text-geo-p20 text-sm">{region}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-4">
             {[
-              { label: 'Capital', value: info.capital, icon: '🏛️' },
-              { label: 'Region', value: info.region, icon: '🌐' },
-              { label: 'Population', value: info.population, icon: '👥' },
+              { label: 'Capital', value: capital, icon: '🏛️' },
+              { label: 'Region', value: region, icon: '🌐' },
+              { label: 'Population', value: population, icon: '👥' },
               { label: 'Difficulty', value: difficulty.charAt(0).toUpperCase() + difficulty.slice(1), icon: '⚡' },
             ].map(item => (
               <div key={item.label} className="rounded-xl bg-geo-bg px-4 py-3">
@@ -169,10 +207,12 @@ export function ResultPage() {
             ))}
           </div>
 
-          {/* Fun fact */}
+          {/* Hint / note */}
           <div className="rounded-xl border border-geo-info/20 bg-geo-info/5 px-4 py-3">
-            <p className="text-xs font-semibold text-geo-info uppercase tracking-widest mb-1">💡 Did You Know?</p>
-            <p className="text-sm text-geo-p10 leading-relaxed">{info.fun}</p>
+            <p className="text-xs font-semibold text-geo-info uppercase tracking-widest mb-1">💡 Hint</p>
+            <p className="text-sm text-geo-p10 leading-relaxed">
+              Closer pin = higher score. Try to get within a few hundred kilometers on Easy.
+            </p>
           </div>
         </div>
 
@@ -181,14 +221,14 @@ export function ResultPage() {
           <button
             id="play-again-btn"
             onClick={() => navigate('/game')}
-            className="btn-primary col-span-2 !py-4 !text-base"
+            className="btn-primary col-span-2 py-4! text-base!"
           >
             🔁 Play Again
           </button>
-          <Link to="/leaderboard" className="btn-secondary !py-4 !text-sm text-center">
+          <Link to="/leaderboard" className="btn-secondary py-4! text-sm! text-center">
             🏆 Leaderboard
           </Link>
-          <Link to="/history" className="btn-secondary !py-4 !text-sm text-center">
+          <Link to="/history" className="btn-secondary py-4! text-sm! text-center">
             📊 My History
           </Link>
         </div>

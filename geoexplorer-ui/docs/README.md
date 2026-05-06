@@ -9,4 +9,8 @@ Use this folder for:
 
 **Proposal file:** if it lives under `Project/`, you can copy or link it here for submission bundles.
 
+## API documentation
+
+- Updated API integration report (backend routes + external APIs): [`API_INTEGRATION_REPORT.md`](./API_INTEGRATION_REPORT.md)
+
 **Related:** [Client structure](../../geoexplorer-ui/FRONTEND_STRUCTURE.md) · [Work distribution](../../geoexplorer-ui/WORK_DISTRIBUTION.md)

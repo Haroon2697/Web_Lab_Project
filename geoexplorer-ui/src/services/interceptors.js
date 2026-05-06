@@ -18,9 +18,10 @@ export function attachAuthInterceptor(client) {
       if (error.response?.status === 401) {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
-        // Redirect to login if not already there
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login'
+        const isAdminPath = window.location.pathname.startsWith('/admin')
+        const target = isAdminPath ? '/admin/login' : '/login'
+        if (window.location.pathname !== target) {
+          window.location.href = target
         }
       }
       return Promise.reject(error)

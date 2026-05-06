@@ -7,7 +7,7 @@
  *   total = correct ? base + bonus : 0
  */
 const BASE_POINTS = { easy: 100, medium: 200, hard: 300 }
-const TIME_LIMITS = { easy: 45, medium: 30, hard: 15 }
+const TIME_LIMITS = { easy: 60, medium: 45, hard: 30 }
 
 /**
  * @param {object} opts

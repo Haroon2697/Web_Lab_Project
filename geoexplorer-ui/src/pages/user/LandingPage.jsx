@@ -52,17 +52,17 @@ export function LandingPage() {
 
           {/* Nav Links */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="#how-it-works" className="text-sm text-geo-p10 hover:text-white transition-colors">How it works</a>
-            <a href="#features" className="text-sm text-geo-p10 hover:text-white transition-colors">Features</a>
-            <a href="#leaderboard-preview" className="text-sm text-geo-p10 hover:text-white transition-colors">Leaderboard</a>
+            <a href="#how-it-works" className="text-sm text-geo-p10 hover:text-geo-p50 transition-colors">How it works</a>
+            <a href="#features" className="text-sm text-geo-p10 hover:text-geo-p50 transition-colors">Features</a>
+            <a href="#leaderboard-preview" className="text-sm text-geo-p10 hover:text-geo-p50 transition-colors">Leaderboard</a>
           </div>
 
           {/* Auth buttons */}
           <div className="flex items-center gap-3">
-            <Link to="/join" className="btn-secondary !py-2 !px-5 !text-sm">
+            <Link to="/join" className="btn-secondary py-2! px-5! text-sm!">
               Join
             </Link>
-            <Link to="/signup" className="btn-primary !py-2 !px-5 !text-sm">
+            <Link to="/signup" className="btn-primary py-2! px-5! text-sm!">
               Play Free
             </Link>
           </div>
@@ -110,10 +110,10 @@ export function LandingPage() {
 
           {/* CTA buttons */}
           <div className="animate-fade-in delay-300 flex flex-wrap items-center justify-center gap-4">
-            <Link to="/signup" className="btn-primary !px-10 !py-4 !text-lg !rounded-2xl">
+            <Link to="/signup" className="btn-primary px-10! py-4! text-lg! rounded-2xl!">
               🎮 Start Playing — It's Free
             </Link>
-            <Link to="/leaderboard" className="btn-secondary !px-10 !py-4 !text-lg !rounded-2xl">
+            <Link to="/leaderboard" className="btn-secondary px-10! py-4! text-lg! rounded-2xl!">
               🏆 View Leaderboard
             </Link>
           </div>
@@ -132,7 +132,7 @@ export function LandingPage() {
         {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
           <span className="text-xs text-geo-p20">Scroll down</span>
-          <div className="h-8 w-[1px] bg-gradient-to-b from-geo-p50 to-transparent" />
+          <div className="h-8 w-px bg-linear-to-b from-geo-p50 to-transparent" />
         </div>
       </section>
 
@@ -162,7 +162,7 @@ export function LandingPage() {
                 </div>
 
                 {/* Bottom accent line */}
-                <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-geo-p50 to-geo-aqua transition-all duration-500 group-hover:w-full" />
+                <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-linear-to-r from-geo-p50 to-geo-aqua transition-all duration-500 group-hover:w-full" />
               </div>
             ))}
           </div>
@@ -182,7 +182,7 @@ export function LandingPage() {
           {/* Steps */}
           <div className="relative grid gap-8 md:grid-cols-3">
             {/* Connecting line */}
-            <div className="absolute top-10 left-[calc(16.66%+1rem)] right-[calc(16.66%+1rem)] hidden h-[2px] bg-gradient-to-r from-geo-p50 via-geo-aqua to-geo-success md:block opacity-30" />
+            <div className="absolute top-10 left-[calc(16.66%+1rem)] right-[calc(16.66%+1rem)] hidden h-[2px] bg-linear-to-r from-geo-p50 via-geo-aqua to-geo-success md:block opacity-30" />
 
             {steps.map((step, i) => (
               <div key={step.number} className={`animate-slide-up delay-${(i + 1) * 100} text-center`}>
@@ -227,7 +227,7 @@ export function LandingPage() {
                 key={p.rank}
                 className={`grid grid-cols-12 items-center rounded-xl px-4 py-4 transition-colors hover:bg-geo-p50/5 ${
                   i === 0 ? 'border border-geo-warning/30 bg-geo-warning/5 mb-2' :
-                  i === 1 ? 'border border-geo-p20/20 bg-white/[0.02] mb-2' :
+                  i === 1 ? 'border border-geo-p20/20 bg-white/2 mb-2' :
                   i === 2 ? 'border border-geo-hint/20 bg-geo-hint/5 mb-2' : 'mb-1'
                 }`}
               >
@@ -238,18 +238,18 @@ export function LandingPage() {
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-geo-p50/20 text-sm font-bold text-geo-p50">
                     {p.name[0]}
                   </div>
-                  <span className={`font-semibold ${i === 0 ? 'text-geo-warning' : i < 3 ? 'text-white' : 'text-geo-p10'}`}>
+                  <span className={`font-semibold ${i === 0 ? 'text-geo-warning' : i < 3 ? 'text-geo-p10' : 'text-geo-p10'}`}>
                     {p.name}
                   </span>
                 </div>
-                <span className={`col-span-4 text-right font-black ${i === 0 ? 'text-geo-warning' : 'text-white'}`}>
+                <span className={`col-span-4 text-right font-black ${i === 0 ? 'text-geo-warning' : 'text-geo-p10'}`}>
                   {p.score.toLocaleString()}
                 </span>
               </div>
             ))}
 
             <div className="mt-6 text-center">
-              <Link to="/leaderboard" className="btn-secondary !py-2 !px-8">
+              <Link to="/leaderboard" className="btn-secondary py-2! px-8!">
                 View Full Leaderboard →
               </Link>
             </div>
@@ -260,7 +260,7 @@ export function LandingPage() {
       {/* ── CTA BANNER ─────────────────────────────────────────────── */}
       <section className="py-24 px-8">
         <div className="mx-auto max-w-4xl">
-          <div className="relative overflow-hidden rounded-3xl border border-geo-p50/30 bg-gradient-to-br from-geo-p50/20 via-geo-card to-geo-p80/10 p-16 text-center">
+          <div className="relative overflow-hidden rounded-3xl border border-geo-p50/30 bg-linear-to-br from-geo-p50/20 via-geo-card to-geo-p80/10 p-16 text-center">
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-geo-p50/20 blur-[80px]" />
               <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-geo-aqua/10 blur-[80px]" />
@@ -272,7 +272,7 @@ export function LandingPage() {
               <p className="mb-8 text-xl text-geo-p10">
                 Join thousands of players. Free to play. Hard to master.
               </p>
-              <Link to="/signup" className="btn-primary !px-12 !py-4 !text-lg !rounded-2xl">
+              <Link to="/signup" className="btn-primary px-12! py-4! text-lg! rounded-2xl!">
                 Create Free Account →
               </Link>
             </div>
@@ -289,9 +289,9 @@ export function LandingPage() {
           </div>
           <p className="text-sm text-geo-p20">© 2026 GeoExplorer · FAST NUCES Software Engineering</p>
           <div className="flex gap-6 text-sm text-geo-p20">
-            <Link to="/login" className="hover:text-white transition-colors">Login</Link>
-            <Link to="/signup" className="hover:text-white transition-colors">Sign Up</Link>
-            <Link to="/leaderboard" className="hover:text-white transition-colors">Leaderboard</Link>
+            <Link to="/login" className="hover:text-geo-p10 transition-colors">Login</Link>
+            <Link to="/signup" className="hover:text-geo-p10 transition-colors">Sign Up</Link>
+            <Link to="/leaderboard" className="hover:text-geo-p10 transition-colors">Leaderboard</Link>
           </div>
         </div>
       </footer>

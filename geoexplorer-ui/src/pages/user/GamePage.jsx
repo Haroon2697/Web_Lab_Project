@@ -7,9 +7,9 @@ import { haversineDistance, mapAccuracyBonus } from '../../utils/mapUtils'
 import { getCountryCoordinates } from '../../utils/countryCoords'
 
 const DIFFICULTY_OPTS = [
-  { value: 'easy', label: '🟢 Easy', time: 45, points: '100 pts' },
-  { value: 'medium', label: '🟡 Medium', time: 30, points: '200 pts' },
-  { value: 'hard', label: '🔴 Hard', time: 15, points: '300 pts' },
+  { value: 'easy', label: '🟢 Easy', time: 60, points: '100 pts' },
+  { value: 'medium', label: '🟡 Medium', time: 45, points: '200 pts' },
+  { value: 'hard', label: '🔴 Hard', time: 30, points: '300 pts' },
 ]
 
 export function GamePage() {
@@ -20,15 +20,18 @@ export function GamePage() {
 
   const [phase, setPhase] = useState('select')
   const [difficulty, setDifficulty] = useState('medium')
-  const [guess, setGuess] = useState('')
   const [guessPosition, setGuessPosition] = useState(null)
   const [timeLeft, setTimeLeft] = useState(30)
   const [imgLoaded, setImgLoaded] = useState(false)
   const [imageUrl, setImageUrl] = useState('')
-  const [hoveredOption, setHoveredOption] = useState(null)
+  const [mapOpen, setMapOpen] = useState(false)
+  const [round, setRound] = useState(1)
+  const [sessionScore, setSessionScore] = useState(0)
+  const [roundResult, setRoundResult] = useState(null)
   const intervalRef = useRef(null)
   const hasAutoSubmittedRef = useRef(false)
 
+  const TOTAL_ROUNDS = 5
   const diffCfg = DIFFICULTY_OPTS.find(d => d.value === difficulty) ?? DIFFICULTY_OPTS[1]
 
   // Redirect to login if not authenticated
@@ -51,8 +54,8 @@ export function GamePage() {
       setTimeLeft(session.timeLimit || diffCfg.time)
       setImgLoaded(false)
       setImageUrl(session.imageUrl || '')
-      setGuess('')
       setGuessPosition(null)
+      setMapOpen(false)
       hasAutoSubmittedRef.current = false
     }
   }, [session, phase, diffCfg.time])
@@ -64,27 +67,22 @@ export function GamePage() {
     return () => clearTimeout(id)
   }, [phase, imgLoaded])
 
-  // When result arrives, navigate to result page
+  // When result arrives, store round result + accumulate score (multi-round)
   useEffect(() => {
     if (result) {
       if (intervalRef.current) clearInterval(intervalRef.current)
-      navigate('/result', {
-        state: {
-          sessionId: result.sessionId,
-          userGuess: result.userGuess,
-          correctCountry: result.correctCountry,
-          score: result.score,
-          timeLeft: result.timeLeft,
-          difficulty: result.difficulty,
-          isCorrect: result.isCorrect,
-          guessPosition: result.guessPosition || result.guessLatlng || guessPosition || null,
-          correctPosition: result.correctPosition || result.correctLatlng || null,
-          distanceKm: result.distanceKm ?? result.distance ?? null,
-          mapBonus: result.mapBonus ?? result.distanceBonus ?? 0,
-        },
-      })
+      const normalized = {
+        ...result,
+        countryMeta: session?.countryMeta || null,
+        guessPosition: result.guessPosition || result.guessLatlng || guessPosition || null,
+        correctPosition: result.correctPosition || result.correctLatlng || null,
+        distanceKm: result.distanceKm ?? result.distance ?? null,
+      }
+      setRoundResult(normalized)
+      setSessionScore((s) => s + (Number(result.score) || 0))
+      setPhase('roundEnd')
     }
-  }, [result, navigate, guessPosition])
+  }, [result, guessPosition, session])
 
   // Start timer when playing
   useEffect(() => {
@@ -111,6 +109,28 @@ export function GamePage() {
 
   const handleStartGame = () => {
     setPhase('loading')
+    setRound(1)
+    setSessionScore(0)
+    setRoundResult(null)
+    dispatch(startGame(difficulty))
+  }
+
+  const handleNextRound = () => {
+    setRoundResult(null)
+    setGuessPosition(null)
+    setMapOpen(false)
+    hasAutoSubmittedRef.current = false
+
+    if (round >= TOTAL_ROUNDS) {
+      // Start a fresh game session (same difficulty).
+      setRound(1)
+      setSessionScore(0)
+      setPhase('loading')
+      dispatch(startGame(difficulty))
+      return
+    }
+    setRound((r) => r + 1)
+    setPhase('loading')
     dispatch(startGame(difficulty))
   }
 
@@ -135,10 +155,9 @@ export function GamePage() {
 
     dispatch(submitGuess({
       correctCountry: session.correctCountry,
-      userGuess: guess || '',
+      userGuess: '',
       imageUrl: session.imageUrl,
       imageCredit: session.imageCredit || '',
-      options: session.options,
       difficulty: session.difficulty || difficulty,
       timeLimit: session.timeLimit || diffCfg.time,
       timeLeft: 0,
@@ -150,7 +169,7 @@ export function GamePage() {
   }
 
   const handleSubmit = () => {
-    if (!guess || !session || !guessPosition) return
+    if (!session || !guessPosition) return
     if (intervalRef.current) clearInterval(intervalRef.current)
     const correctPosition =
       session.correctPosition ||
@@ -171,10 +190,9 @@ export function GamePage() {
 
     dispatch(submitGuess({
       correctCountry: session.correctCountry,
-      userGuess: guess,
+      userGuess: '',
       imageUrl: session.imageUrl,
       imageCredit: session.imageCredit || '',
-      options: session.options,
       difficulty: session.difficulty || difficulty,
       timeLimit: session.timeLimit || diffCfg.time,
       timeLeft,
@@ -271,10 +289,16 @@ export function GamePage() {
       {/* ── Top HUD Bar ─────────────────────────────── */}
       <header className="glass border-b border-geo-p20/10 px-6 py-3">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
-          {/* Score */}
-          <div className="flex items-center gap-2">
-            <span className="text-geo-p20 text-sm">Score</span>
-            <span className="text-xl font-black text-geo-warning">{user?.totalScore?.toLocaleString() || '0'}</span>
+          {/* Scores */}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-geo-p20 text-sm">Session</span>
+              <span className="text-xl font-black text-geo-warning">{sessionScore.toLocaleString()}</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="text-geo-p20 text-sm">Total</span>
+              <span className="text-xl font-black text-geo-p10">{user?.totalScore?.toLocaleString() || '0'}</span>
+            </div>
           </div>
 
           {/* Timer */}
@@ -359,61 +383,38 @@ export function GamePage() {
             {/* Round info */}
             <div className="rounded-xl border border-geo-p20/20 bg-geo-bg px-4 py-3">
               <p className="text-xs text-geo-p20 uppercase tracking-widest mb-1">Round</p>
-              <p className="text-xl font-black">1 / 5</p>
+              <p className="text-xl font-black">{round} / {TOTAL_ROUNDS}</p>
             </div>
 
-            {/* Country options */}
+            {/* Hint (optional) */}
             <div>
-              <p className="mb-3 text-sm font-semibold text-geo-p10 uppercase tracking-wider">Select Country</p>
-              <div className="grid grid-cols-1 gap-2">
-                {(session?.options || []).map((opt) => (
-                  <button
-                    key={opt}
-                    id={`option-${opt.toLowerCase().replace(/\s+/g, '-')}`}
-                    onClick={() => setGuess(opt)}
-                    onMouseEnter={() => setHoveredOption(opt)}
-                    onMouseLeave={() => setHoveredOption(null)}
-                    className={`relative flex items-center gap-3 rounded-xl border px-4 py-3.5 text-left text-sm font-semibold transition-all duration-200 overflow-hidden ${
-                      guess === opt
-                        ? 'border-geo-p50 bg-geo-p50/20 text-white shadow-lg shadow-geo-p50/10'
-                        : 'border-geo-p20/20 bg-geo-bg hover:border-geo-p50/50 hover:bg-geo-p50/5 text-geo-p10'
-                    }`}
-                  >
-                    {/* Selection indicator */}
-                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
-                      guess === opt
-                        ? 'border-geo-p50 bg-geo-p50'
-                        : 'border-geo-p20/40'
-                    }`}>
-                      {guess === opt && <span className="text-white text-xs">✓</span>}
-                    </span>
-                    <span>{opt}</span>
-
-                    {/* Hover wave */}
-                    {hoveredOption === opt && guess !== opt && (
-                      <span className="absolute inset-0 bg-geo-p50/5 rounded-xl" />
-                    )}
-                  </button>
-                ))}
+              <p className="mb-2 text-sm font-semibold text-geo-p10 uppercase tracking-wider">How to Guess</p>
+              <div className="rounded-xl border border-geo-p20/20 bg-geo-bg px-4 py-3 text-sm text-geo-p20 leading-relaxed">
+                Study the photo first. When you’re ready, open the map, place a pin, and submit.
               </div>
             </div>
 
-            {/* Interactive map guess */}
+            {/* Map guess (modal) */}
             <div>
-              <p className="mb-3 text-sm font-semibold text-geo-p10 uppercase tracking-wider">
-                Click Exact Location
-              </p>
-              <MapSelector
-                guessPosition={guessPosition}
-                onPositionSelect={setGuessPosition}
+              <p className="mb-3 text-sm font-semibold text-geo-p10 uppercase tracking-wider">Your Pin</p>
+              <button
+                type="button"
+                onClick={() => setMapOpen(true)}
+                className="w-full rounded-xl border border-geo-p20/20 bg-geo-bg px-4 py-4 text-left transition-all hover:border-geo-p50/40 hover:bg-geo-p50/5"
                 disabled={loading}
-                height="300px"
-              />
-              <p className="mt-2 text-xs text-geo-p20">
-                {guessPosition
-                  ? `Pinned at ${guessPosition.lat.toFixed(2)}, ${guessPosition.lng.toFixed(2)}`
-                  : 'Click anywhere on the map to place your guess marker'}
-              </p>
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-bold text-geo-p10">🗺️ Open Map</div>
+                    <div className="text-xs text-geo-p20 mt-1">
+                      {guessPosition
+                        ? `Pinned at ${guessPosition.lat.toFixed(2)}, ${guessPosition.lng.toFixed(2)}`
+                        : 'No pin yet — click on the map to place one'}
+                    </div>
+                  </div>
+                  <div className="text-geo-p20">→</div>
+                </div>
+              </button>
             </div>
 
             {/* Submit */}
@@ -421,9 +422,9 @@ export function GamePage() {
               <button
                 id="submit-answer-btn"
                 onClick={handleSubmit}
-                disabled={!guess || !guessPosition || loading}
+                disabled={!guessPosition || loading}
                 className={`w-full rounded-xl py-4 text-base font-bold transition-all duration-200 ${
-                  guess && guessPosition
+                  guessPosition
                     ? 'btn-primary'
                     : 'cursor-not-allowed bg-geo-p20/10 text-geo-p20 border border-geo-p20/20'
                 }`}
@@ -433,11 +434,9 @@ export function GamePage() {
                     <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin block" />
                     Submitting…
                   </span>
-                ) : !guess
-                  ? 'Select a Country First'
-                  : !guessPosition
-                    ? 'Pin Location on Map First'
-                    : `Submit — ${guess} →`}
+                ) : !guessPosition
+                  ? 'Open Map to Place a Pin'
+                  : 'Submit Guess →'}
               </button>
 
               <Link to="/" className="block text-center text-sm text-geo-p20 hover:text-white transition-colors">
@@ -447,6 +446,110 @@ export function GamePage() {
           </div>
         </div>
       </div>
+
+      {/* ── Map modal ───────────────────────────────────── */}
+      {mapOpen && (
+        <div className="fixed inset-0 z-9999">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setMapOpen(false)}
+          />
+          <div className="absolute inset-x-0 bottom-0 top-14 sm:top-10 md:top-8 mx-auto w-full max-w-5xl px-4">
+            <div className="geo-card p-0! overflow-hidden h-full flex flex-col">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-geo-p20/10">
+                <div>
+                  <p className="text-xs text-geo-p20 uppercase tracking-widest">Place your guess</p>
+                  <p className="font-black text-lg text-geo-p10">Click anywhere on the map to drop a pin</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMapOpen(false)}
+                  className="btn-secondary py-2! px-4! text-sm!"
+                >
+                  Close ✕
+                </button>
+              </div>
+              <div className="p-4 flex-1">
+                <MapSelector
+                  guessPosition={guessPosition}
+                  onPositionSelect={setGuessPosition}
+                  disabled={loading}
+                  height="70vh"
+                />
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <p className="text-xs text-geo-p20">
+                    {guessPosition
+                      ? `Pinned at ${guessPosition.lat.toFixed(3)}, ${guessPosition.lng.toFixed(3)}`
+                      : 'Tip: zoom in for better accuracy'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setMapOpen(false)}
+                    className="btn-primary py-2.5! px-5! text-sm!"
+                    disabled={!guessPosition}
+                  >
+                    Done ✓
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── End of round overlay ───────────────────────── */}
+      {phase === 'roundEnd' && roundResult && (
+        <div className="fixed inset-0 z-9999">
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute inset-x-0 top-16 mx-auto w-full max-w-2xl px-4">
+            <div className="geo-card animate-bounce-in">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-geo-p20">
+                    {round >= TOTAL_ROUNDS ? 'Game finished' : `Round ${round} complete`}
+                  </p>
+                  <h2 className="text-2xl font-black text-geo-p10 mt-1">
+                    +{Number(roundResult.score || 0).toLocaleString()} points
+                  </h2>
+                  {roundResult.distanceKm != null && (
+                    <p className="mt-1 text-sm text-geo-p20">
+                      Distance: <span className="font-bold text-geo-p10">{roundResult.distanceKm.toLocaleString()} km</span>
+                    </p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-geo-p20">Session total</p>
+                  <p className="text-2xl font-black text-geo-warning">{sessionScore.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <button
+                  type="button"
+                  onClick={handleNextRound}
+                  className="btn-primary py-3!"
+                >
+                  {round >= TOTAL_ROUNDS ? 'Start Again →' : 'Next Round →'}
+                </button>
+                {round >= TOTAL_ROUNDS ? (
+                  <>
+                    <Link to={ROUTES.leaderboard} className="btn-secondary py-3! text-center">
+                      Leaderboard
+                    </Link>
+                    <Link to={ROUTES.profile} className="btn-secondary py-3! text-center">
+                      Profile
+                    </Link>
+                  </>
+                ) : (
+                  <Link to={ROUTES.home} className="btn-secondary py-3! text-center">
+                    Quit
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

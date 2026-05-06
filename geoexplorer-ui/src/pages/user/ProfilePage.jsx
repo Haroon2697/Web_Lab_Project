@@ -14,6 +14,7 @@ const DIFF_COLORS = {
 export function ProfilePage() {
   const dispatch = useDispatch()
   const { user } = useSelector((state) => state.auth)
+  const { loading: profileLoading } = useSelector((state) => state.user)
   const { myRank } = useSelector((state) => state.leaderboard)
   const { history } = useSelector((state) => state.game)
 
@@ -72,67 +73,77 @@ export function ProfilePage() {
 
             {/* Avatar + name */}
             <div className="geo-card text-center animate-slide-up">
-              <div className="relative mx-auto mb-4 w-fit">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-geo-p50 to-geo-aqua text-4xl font-black text-white shadow-xl">
-                  {user?.name?.[0] || 'H'}
-                </div>
-                <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-geo-bg bg-geo-success text-xs text-white">
-                  ✓
-                </div>
-              </div>
-
-              {editing ? (
-                <div className="mb-3">
-                  <input
-                    id="profile-name-input"
-                    type="text"
-                    value={nameInput}
-                    onChange={e => setNameInput(e.target.value)}
-                    className="geo-input text-center text-lg font-bold mb-3"
-                    autoFocus
-                  />
-                  <div className="flex gap-2">
-                    <button onClick={handleSave} className="btn-primary flex-1 !py-2 !text-sm">
-                      Save
-                    </button>
-                    <button onClick={() => { setEditing(false); setNameInput(user?.name || '') }}
-                      className="btn-secondary flex-1 !py-2 !text-sm">
-                      Cancel
-                    </button>
-                  </div>
+              {profileLoading && !user ? (
+                <div className="space-y-4">
+                  <div className="mx-auto skeleton h-24 w-24 rounded-full" />
+                  <div className="mx-auto skeleton h-5 w-40" />
+                  <div className="mx-auto skeleton h-4 w-56" />
                 </div>
               ) : (
-                <div className="mb-3">
-                  <h2 className="text-xl font-black">{user?.name || nameInput}</h2>
-                  <button
-                    onClick={() => setEditing(true)}
-                    className="mt-1 text-xs text-geo-p50 hover:text-geo-aqua transition-colors"
-                  >
-                    ✏️ Edit Name
-                  </button>
-                </div>
+                <>
+                  <div className="relative mx-auto mb-4 w-fit">
+                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br from-geo-p50 to-geo-aqua text-4xl font-black text-white shadow-xl">
+                      {user?.name?.[0] || 'H'}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-geo-bg bg-geo-success text-xs text-white">
+                      ✓
+                    </div>
+                  </div>
+
+                  {editing ? (
+                    <div className="mb-3">
+                      <input
+                        id="profile-name-input"
+                        type="text"
+                        value={nameInput}
+                        onChange={e => setNameInput(e.target.value)}
+                        className="geo-input text-center text-lg font-bold mb-3"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <button onClick={handleSave} className="btn-primary flex-1 py-2! text-sm!">
+                          Save
+                        </button>
+                        <button onClick={() => { setEditing(false); setNameInput(user?.name || '') }}
+                          className="btn-secondary flex-1 py-2! text-sm!">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mb-3">
+                      <h2 className="text-xl font-black">{user?.name || nameInput}</h2>
+                      <button
+                        onClick={() => setEditing(true)}
+                        className="mt-1 text-xs text-geo-p50 hover:text-geo-aqua transition-colors"
+                      >
+                        ✏️ Edit Name
+                      </button>
+                    </div>
+                  )}
+
+                  {saved && (
+                    <div className="mb-3 rounded-xl border border-geo-success/30 bg-geo-success/10 px-3 py-2 text-sm text-geo-success animate-bounce-in">
+                      ✅ Profile updated!
+                    </div>
+                  )}
+
+                  <div className="text-sm text-geo-p20 mb-4">{user?.email || ''}</div>
+
+                  <div className="geo-divider mb-4" />
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-geo-p20">Member since</span>
+                      <span className="font-medium">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '—'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-geo-p20">Global Rank</span>
+                      <span className="font-bold text-geo-p50">#{rank}</span>
+                    </div>
+                  </div>
+                </>
               )}
-
-              {saved && (
-                <div className="mb-3 rounded-xl border border-geo-success/30 bg-geo-success/10 px-3 py-2 text-sm text-geo-success animate-bounce-in">
-                  ✅ Profile updated!
-                </div>
-              )}
-
-              <div className="text-sm text-geo-p20 mb-4">{user?.email || ''}</div>
-
-              <div className="geo-divider mb-4" />
-
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-geo-p20">Member since</span>
-                  <span className="font-medium">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '—'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-geo-p20">Global Rank</span>
-                  <span className="font-bold text-geo-p50">#{rank}</span>
-                </div>
-              </div>
             </div>
 
             {/* Quick links */}
@@ -167,10 +178,11 @@ export function ProfilePage() {
                 { label: 'Total Score', value: totalScore.toLocaleString(), icon: '⭐', color: 'text-geo-warning', bg: 'bg-geo-warning/10' },
                 { label: 'Games Played', value: gamesPlayed, icon: '🎮', color: 'text-geo-p50', bg: 'bg-geo-p50/10' },
                 { label: 'Win Rate', value: `${winRate}%`, icon: '🎯', color: 'text-geo-success', bg: 'bg-geo-success/10' },
+                { label: 'Current Streak', value: user?.currentStreak || 0, icon: '🔥', color: 'text-orange-500', bg: 'bg-orange-500/10' },
                 { label: 'Best Score', value: highestScore, icon: '🏅', color: 'text-geo-aqua', bg: 'bg-geo-aqua/10' },
               ].map(s => (
                 <div key={s.label} className="geo-card-hover flex items-center gap-4">
-                  <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-2xl ${s.bg}`}>
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ${s.bg}`}>
                     {s.icon}
                   </div>
                   <div>
@@ -189,13 +201,37 @@ export function ProfilePage() {
               </div>
               <div className="h-2.5 w-full rounded-full bg-geo-p20/20 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-geo-p50 to-geo-aqua"
+                  className="h-full rounded-full bg-linear-to-r from-geo-p50 to-geo-aqua"
                   style={{ width: `${Math.min((avgScore / 400) * 100, 100)}%` }}
                 />
               </div>
               <div className="mt-2 flex justify-between text-xs text-geo-p20">
                 <span>0</span>
                 <span>Max possible: 400+</span>
+              </div>
+            </div>
+
+            {/* Trophy Case */}
+            <div className="geo-card animate-slide-up delay-200">
+              <p className="font-bold mb-4">Trophy Case</p>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {[
+                  { id: 'First Game', icon: '🎮', label: 'First Game' },
+                  { id: 'Globetrotter', icon: '🌍', label: 'Globetrotter' },
+                  { id: 'Sharpshooter', icon: '🎯', label: 'Sharpshooter' },
+                  { id: 'Perfect Guess', icon: '✅', label: 'Perfect Guess' },
+                  { id: 'On Fire 🔥', icon: '🔥', label: 'On Fire' },
+                  { id: 'Unstoppable 🌟', icon: '🌟', label: 'Unstoppable' },
+                  { id: 'Explorer Elite', icon: '👑', label: 'Explorer Elite' }
+                ].map(badge => {
+                  const unlocked = user?.achievements?.includes(badge.id)
+                  return (
+                    <div key={badge.id} className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${unlocked ? 'bg-linear-to-br from-geo-p50/10 to-geo-aqua/10 border-geo-aqua/30 shadow-[0_0_15px_rgba(58,232,189,0.1)] hover:-translate-y-1' : 'bg-slate-800/50 border-white/5 opacity-50 grayscale hover:opacity-75'}`}>
+                      <span className="text-3xl mb-2 drop-shadow-lg">{badge.icon}</span>
+                      <span className="text-[10px] font-bold text-center leading-tight text-white">{badge.label}</span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
@@ -217,7 +253,7 @@ export function ProfilePage() {
                   <div
                     key={g._id || i}
                     className={`flex items-center gap-3 rounded-xl px-4 py-3 ${
-                      g.isCorrect ? 'border border-geo-success/15 bg-geo-success/[0.03]' : 'border border-geo-error/15 bg-geo-error/[0.03]'
+                      g.isCorrect ? 'border border-geo-success/15 bg-geo-success/3' : 'border border-geo-error/15 bg-geo-error/3'
                     }`}
                   >
                     <span className="text-xl">{g.isCorrect ? '✅' : '❌'}</span>

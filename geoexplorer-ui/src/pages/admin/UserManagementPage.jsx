@@ -36,45 +36,47 @@ export function UserManagementPage() {
           placeholder="Search users..." 
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 max-w-md bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-geo-p50 transition-all"
+          className="geo-input flex-1 max-w-md"
         />
       </div>
 
-      <div className="bg-geo-card/40 rounded-2xl border border-white/5 overflow-hidden backdrop-blur-sm">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-hidden">
+        <table className="app-table">
           <thead>
-            <tr className="bg-white/5 border-b border-white/10 text-geo-p20 text-sm">
-              <th className="p-4 font-medium">Name</th>
-              <th className="p-4 font-medium">Email</th>
-              <th className="p-4 font-medium">Score</th>
-              <th className="p-4 font-medium">Status</th>
-              <th className="p-4 font-medium text-right">Actions</th>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Score</th>
+              <th>Status</th>
+              <th className="text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody>
             {filtered.map(user => (
-              <tr key={user._id} className="hover:bg-white/[0.02] transition-colors">
-                <td className="p-4 text-geo-p10 font-medium">{user.name}</td>
-                <td className="p-4 text-slate-300">{user.email}</td>
-                <td className="p-4 text-slate-300 font-mono">{user.totalScore}</td>
-                <td className="p-4">
-                  <span className={`px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${user.isBlocked ? 'bg-geo-error/20 text-geo-error' : 'bg-geo-success/20 text-geo-success'}`}>
+              <tr key={user._id}>
+                <td className="font-medium">{user.name}</td>
+                <td className="text-geo-p20">{user.email}</td>
+                <td className="font-mono text-geo-p20">{user.totalScore}</td>
+                <td>
+                  <span className={`geo-badge ${user.isBlocked ? 'bg-geo-error/10 text-geo-error' : 'bg-geo-success/10 text-geo-success'}`}>
                     {user.isBlocked ? 'Blocked' : 'Active'}
                   </span>
                 </td>
-                <td className="p-4 flex gap-2 justify-end">
-                  <button onClick={() => toggleBlock(user._id)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-colors text-white">
+                <td className="text-right">
+                  <div className="flex justify-end gap-2">
+                  <button onClick={() => toggleBlock(user._id)} className="btn-secondary py-2! px-3! text-xs!">
                     {user.isBlocked ? 'Unblock' : 'Block'}
                   </button>
-                  <button onClick={() => deleteUser(user._id)} className="px-3 py-1.5 bg-geo-error/20 hover:bg-geo-error/40 rounded-lg text-sm transition-colors text-geo-error">
+                  <button onClick={() => deleteUser(user._id)} className="btn-danger py-2! px-3! text-xs!">
                     Delete
                   </button>
+                  </div>
                 </td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan="5" className="p-8 text-center text-geo-p20">No users found matching your criteria.</td>
+                <td colSpan="5" className="py-10 text-center text-geo-p20">No users found matching your criteria.</td>
               </tr>
             )}
           </tbody>

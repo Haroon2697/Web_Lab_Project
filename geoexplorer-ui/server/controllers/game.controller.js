@@ -19,6 +19,7 @@ import GameSession from '../models/GameSession.js'
 import User from '../models/User.js'
 import { calcScore, TIME_LIMITS } from '../utils/scoreCalc.js'
 import { config } from '../config/env.js'
+import { stringify as formEncode } from 'node:querystring'
 
 const HTTP_TIMEOUT_MS = 6000
 const IMAGE_CACHE_TTL_MS = 1000 * 60 * 60 * 6 // 6 hours
@@ -56,6 +57,27 @@ function mapDistanceBonus(distanceKm) {
   return 0
 }
 
+function mapScoreByDistance(distanceKm, difficulty) {
+  // Score decreases as distance increases.
+  // Exact pin (0km) -> 5000 points.
+  // Past the max distance, score -> 0.
+  const MAX_SCORE = 5000
+  const MAX_DISTANCE_BY_DIFF = {
+    easy: 8000,
+    medium: 6000,
+    hard: 4000,
+  }
+  const maxDist = MAX_DISTANCE_BY_DIFF[difficulty] ?? 6000
+  const d = Math.max(0, Number(distanceKm ?? 0))
+  const ratio = 1 - Math.min(d, maxDist) / maxDist
+  return Math.round(MAX_SCORE * ratio)
+}
+
+function correctThresholdKm(difficulty) {
+  // "Correct" for achievements/UX (separate from continuous score).
+  return difficulty === 'easy' ? 500 : difficulty === 'hard' ? 250 : 350
+}
+
 /* ── Cached country list (fetched once, now includes latlng) ── */
 let countryCache = null
 const imageCache = new Map()
@@ -84,7 +106,7 @@ async function getAllCountries() {
   if (countryCache) return countryCache
   try {
     const { data } = await axios.get(
-      'https://restcountries.com/v3.1/all?fields=name,flags,latlng',
+      'https://restcountries.com/v3.1/all?fields=name,flags,latlng,capital,capitalInfo,region,subregion,population',
       { timeout: HTTP_TIMEOUT_MS },
     )
     countryCache = data
@@ -92,6 +114,11 @@ async function getAllCountries() {
         name: c.name?.common,
         flag: c.flags?.png || c.flags?.svg || '',
         latlng: c.latlng || [0, 0], // [lat, lng]
+        capital: Array.isArray(c.capital) ? c.capital[0] : (c.capital || ''),
+        capitalLatlng: c.capitalInfo?.latlng || null,
+        region: c.region || '',
+        subregion: c.subregion || '',
+        population: typeof c.population === 'number' ? c.population : null,
       }))
       .filter((c) => c.name)
     return countryCache
@@ -133,6 +160,144 @@ async function getCountryCoords(countryName) {
   return match ? { lat: match.latlng[0], lng: match.latlng[1] } : null
 }
 
+function getCountryMeta(countryName) {
+  if (!countryCache) return null
+  const match = countryCache.find(
+    (c) => c.name.toLowerCase() === countryName.toLowerCase(),
+  )
+  if (!match) return null
+  return {
+    capital: match.capital || null,
+    capitalLatlng: match.capitalLatlng || null,
+    region: match.region || null,
+    subregion: match.subregion || null,
+    flag: match.flag || null,
+    population: match.population ?? null,
+  }
+}
+
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n))
+}
+
+function jitterLatLng({ lat, lng }, maxDeltaDeg) {
+  const dLat = (Math.random() * 2 - 1) * maxDeltaDeg
+  const dLng = (Math.random() * 2 - 1) * maxDeltaDeg
+  return {
+    lat: clamp(lat + dLat, -85, 85),
+    lng: ((lng + dLng + 540) % 360) - 180,
+  }
+}
+
+function toOsvUrl(path) {
+  if (!path) return null
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `https://api.openstreetcam.org/${String(path).replace(/^\/+/, '')}`
+}
+
+async function fetchOpenStreetCamPhoto({ lat, lng, radiusMeters, ipp = 30 }) {
+  // Public endpoint (no token): returns nearby crowd-sourced street photos.
+  const url = 'https://api.openstreetcam.org/1.0/list/nearby-photos/'
+  try {
+    const { data } = await axios.post(
+      url,
+      formEncode({ lat, lng, radius: radiusMeters, ipp, page: 1 }),
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        timeout: HTTP_TIMEOUT_MS,
+      },
+    )
+
+    const items = Array.isArray(data?.currentPageItems) ? data.currentPageItems : []
+    if (items.length === 0) return null
+
+    // Prefer large thumbnail for performance; fallback to full image.
+    const pick = items[Math.floor(Math.random() * items.length)]
+    const imageUrl = toOsvUrl(pick.lth_name || pick.name || pick.th_name)
+    if (!imageUrl) return null
+
+    return {
+      url: imageUrl,
+      credit: pick.user ? `KartaView • ${pick.user}` : 'KartaView',
+    }
+  } catch (err) {
+    // Treat as "no coverage" and allow fallback.
+    return null
+  }
+}
+
+async function fetchMapillaryImage({ lat, lng, radiusMeters, limit = 40 }) {
+  if (!config.MAPILLARY_ACCESS_TOKEN) return null
+
+  // Mapillary radius search max is 25m; for a "nearby" search that works in practice,
+  // we use a small bbox (Mapillary allows bbox < 0.01 degrees square).
+  const metersToDeg = (m) => m / 111_320
+  const d = clamp(metersToDeg(radiusMeters), 0.00015, 0.0045) // ~17m .. ~500m
+  const bbox = `${lng - d},${lat - d},${lng + d},${lat + d}`
+
+  try {
+    const { data } = await axios.get('https://graph.mapillary.com/images', {
+      params: {
+        fields: 'id,thumb_2048_url,creator,is_pano',
+        bbox,
+        limit,
+      },
+      headers: {
+        Authorization: `OAuth ${config.MAPILLARY_ACCESS_TOKEN}`,
+      },
+      timeout: HTTP_TIMEOUT_MS,
+    })
+
+    const items = Array.isArray(data?.data) ? data.data : []
+    const usable = items.filter((i) => i?.thumb_2048_url && i.is_pano !== true)
+    if (usable.length === 0) return null
+
+    const pick = usable[Math.floor(Math.random() * usable.length)]
+    return {
+      url: pick.thumb_2048_url,
+      credit: pick.creator?.username ? `Mapillary • ${pick.creator.username}` : 'Mapillary',
+    }
+  } catch {
+    return null
+  }
+}
+
+async function fetchMapillaryStreetPhotoNear(point, cfg) {
+  if (!config.MAPILLARY_ACCESS_TOKEN) return null
+
+  for (let i = 0; i < cfg.attempts; i++) {
+    const p = jitterLatLng(point, cfg.jitter)
+    const img = await fetchMapillaryImage({
+      lat: p.lat,
+      lng: p.lng,
+      radiusMeters: cfg.radius,
+      limit: cfg.limit,
+    })
+    if (img?.url) return img
+  }
+  return null
+}
+
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(() => resolve(null), ms)),
+  ])
+}
+
+async function firstNonNull(promises) {
+  try {
+    // Resolve the first promise that returns a truthy value.
+    return await Promise.any(
+      promises.map((p) =>
+        Promise.resolve(p).then((v) => (v ? v : Promise.reject(new Error('empty')))),
+      ),
+    )
+  } catch {
+    return null
+  }
+}
+
 /* ── Fetch image from Unsplash ─────────────────────────────── */
 async function fetchUnsplashImage(query) {
   const queryKey = query.trim().toLowerCase()
@@ -151,7 +316,11 @@ async function fetchUnsplashImage(query) {
   }
   try {
     const { data } = await axios.get('https://api.unsplash.com/photos/random', {
-      params: { query: `${query} landmark landscape`, orientation: 'landscape' },
+      // Bias toward street scenes + famous places + capital landmarks.
+      params: {
+        query,
+        orientation: 'landscape',
+      },
       headers: { Authorization: `Client-ID ${config.UNSPLASH_ACCESS_KEY}` },
       timeout: HTTP_TIMEOUT_MS,
     })
@@ -168,6 +337,15 @@ async function fetchUnsplashImage(query) {
   }
 }
 
+async function fetchUnsplashImageFromQueries(queries) {
+  for (const q of queries) {
+    const image = await fetchUnsplashImage(q)
+    if (image?.url) return image
+  }
+  // Always return something deterministic.
+  return fetchUnsplashImage(queries[0] || 'world')
+}
+
 /**
  * POST /api/game/start
  * @body { difficulty: 'easy' | 'medium' | 'hard' }
@@ -182,30 +360,88 @@ export async function startGame(req, res) {
     // Pick a random correct country
     const correctIdx = Math.floor(Math.random() * countries.length)
     const correctCountry = countries[correctIdx].name
+    const meta = getCountryMeta(correctCountry)
 
-    // Pick 3 unique wrong options
-    const wrongOptions = []
-    const usedIndices = new Set([correctIdx])
-    while (wrongOptions.length < 3 && usedIndices.size < countries.length) {
-      const idx = Math.floor(Math.random() * countries.length)
-      if (!usedIndices.has(idx)) {
-        usedIndices.add(idx)
-        wrongOptions.push(countries[idx].name)
-      }
-    }
+    // 1) Try OpenStreetCam/KartaView street-level photos (free, if coverage exists).
+    const baseLatlngArr = meta?.capitalLatlng || null
+    const basePoint = baseLatlngArr
+      ? { lat: baseLatlngArr[0], lng: baseLatlngArr[1] }
+      : { lat: countries[correctIdx].latlng?.[0] ?? 0, lng: countries[correctIdx].latlng?.[1] ?? 0 }
 
-    const options = shuffle([correctCountry, ...wrongOptions])
+    const mapillaryCfg =
+      difficulty === 'easy'
+        ? { attempts: 6, jitter: 0.01, radius: 350, limit: 80 }
+        : difficulty === 'hard'
+          ? { attempts: 7, jitter: 0.25, radius: 600, limit: 90 }
+          : { attempts: 6, jitter: 0.06, radius: 450, limit: 85 }
 
-    // Fetch image
-    const image = await fetchUnsplashImage(correctCountry)
+    const osvCfg =
+      difficulty === 'easy'
+        ? { jitter: 0.15, radius: 450 }
+        : difficulty === 'hard'
+          ? { jitter: 2.5, radius: 1800 }
+          : { jitter: 0.7, radius: 900 }
+
+    // Performance: cap image selection time and run providers in parallel.
+    // This avoids long waits when a provider is slow or has no coverage.
+    const IMAGE_BUDGET_MS = 3500
+    const mapillaryPromise = withTimeout(fetchMapillaryStreetPhotoNear(basePoint, mapillaryCfg), 2000)
+
+    const osvPoint = jitterLatLng(basePoint, osvCfg.jitter)
+    const osvPromise = withTimeout(
+      fetchOpenStreetCamPhoto({
+        lat: osvPoint.lat,
+        lng: osvPoint.lng,
+        radiusMeters: osvCfg.radius,
+      }),
+      2000,
+    )
+
+    const capital = meta?.capital || ''
+
+    // Difficulty-based image specificity:
+    // - easy: capital + famous landmarks (most recognizable)
+    // - medium: country + landmark/street (moderately recognizable)
+    // - hard: country + generic nature/streets (more vague)
+    const easyQueries = [
+      `${capital || correctCountry} famous landmark`,
+      `${capital || correctCountry} tourist attraction`,
+      `${capital || correctCountry} street`,
+      `${correctCountry} capital city landmark`,
+    ]
+    const mediumQueries = [
+      `${correctCountry} landmark`,
+      `${correctCountry} downtown street`,
+      `${correctCountry} city skyline`,
+    ]
+    const hardQueries = [
+      `${correctCountry} landscape`,
+      `${correctCountry} countryside`,
+      `${correctCountry} nature`,
+      `${correctCountry} street`,
+    ]
+
+    const queries =
+      difficulty === 'easy'
+        ? easyQueries
+        : difficulty === 'hard'
+          ? hardQueries
+          : mediumQueries
+
+    const unsplashPromise = withTimeout(fetchUnsplashImageFromQueries(queries), 1200)
+
+    // Fetch image (best-effort within budget)
+    const image =
+      (await withTimeout(firstNonNull([mapillaryPromise, osvPromise, unsplashPromise]), IMAGE_BUDGET_MS)) ||
+      (await fetchUnsplashImageFromQueries(queries))
 
     res.json({
       correctCountry,
       imageUrl: image.url,
       imageCredit: image.credit,
-      options,
       difficulty,
       timeLimit,
+      countryMeta: meta,
     })
   } catch (err) {
     console.error('startGame error:', err)
@@ -222,7 +458,7 @@ export async function submitGuess(req, res) {
   try {
     const {
       correctCountry,
-      userGuess,
+      userGuess = '',
       imageUrl,
       imageCredit = '',
       options = [],
@@ -234,11 +470,9 @@ export async function submitGuess(req, res) {
       correctPosition = null,
     } = req.body
 
-    if (!correctCountry || !userGuess) {
-      return res.status(400).json({ message: 'correctCountry and userGuess are required' })
+    if (!correctCountry) {
+      return res.status(400).json({ message: 'correctCountry is required' })
     }
-
-    const isCorrect = userGuess.trim().toLowerCase() === correctCountry.trim().toLowerCase()
 
     // Look up correct country coordinates (allow frontend-provided fallback)
     const lookupCoords = await getCountryCoords(correctCountry)
@@ -256,17 +490,18 @@ export async function submitGuess(req, res) {
 
     // Calculate distance if user placed a map pin
     let distance = null
-    let distanceBonus = 0
     if (guessCoords && correctLatlng) {
       distance = Math.round(
         haversineDistance(guessCoords.lat, guessCoords.lng, correctLatlng.lat, correctLatlng.lng),
       )
-      distanceBonus = mapDistanceBonus(distance)
     }
 
-    // Score = base country score + map distance bonus
-    const baseScore = calcScore({ isCorrect, difficulty, timeLeft })
-    const score = baseScore + distanceBonus
+    // Continuous map scoring.
+    const score = distance != null ? mapScoreByDistance(distance, difficulty) : 0
+    const baseScore = score
+    const distanceBonus = 0
+    const isCorrect =
+      distance != null ? distance <= correctThresholdKm(difficulty) : false
 
     // Save game session
     const session = await GameSession.create({
@@ -286,11 +521,57 @@ export async function submitGuess(req, res) {
       distance: distance ?? undefined,
     })
 
-    // Update user stats
-    await User.findByIdAndUpdate(req.user._id, {
-      $inc: { totalScore: score, gamesPlayed: 1 },
-      ...(score > (req.user.highestScore || 0) ? { highestScore: score } : {}),
-    })
+    // Update user stats, streak, and achievements
+    const user = await User.findById(req.user._id)
+    const now = new Date()
+    const lastPlayed = user.lastPlayedDate
+
+    let newStreak = user.currentStreak || 0
+    if (lastPlayed) {
+      // Calculate start of today and start of last played day
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const lastPlayDay = new Date(lastPlayed.getFullYear(), lastPlayed.getMonth(), lastPlayed.getDate())
+      
+      const msPerDay = 1000 * 60 * 60 * 24
+      const daysDiff = Math.round((today - lastPlayDay) / msPerDay)
+      
+      if (daysDiff === 1) {
+        newStreak += 1
+      } else if (daysDiff > 1) {
+        newStreak = 1
+      }
+    } else {
+      newStreak = 1
+    }
+
+    // Achievements logic
+    const newAchievements = []
+    const totalGames = user.gamesPlayed + 1
+    const newTotalScore = user.totalScore + score
+    
+    const award = (name) => {
+      if (!user.achievements.includes(name)) {
+        user.achievements.push(name)
+        newAchievements.push(name)
+      }
+    }
+
+    award('First Game')
+    if (totalGames >= 10) award('Globetrotter')
+    if (distance !== null && distance <= 100) award('Sharpshooter')
+    if (distance !== null && distance <= 50) award('Perfect Guess')
+    if (newStreak >= 3) award('On Fire 🔥')
+    if (newStreak >= 7) award('Unstoppable 🌟')
+    if (newTotalScore >= 1000) award('Explorer Elite')
+
+    user.totalScore = newTotalScore
+    user.gamesPlayed = totalGames
+    if (score > (user.highestScore || 0)) {
+      user.highestScore = score
+    }
+    user.currentStreak = newStreak
+    user.lastPlayedDate = now
+    await user.save()
 
     res.json({
       sessionId: session._id,
@@ -309,6 +590,8 @@ export async function submitGuess(req, res) {
       distanceKm: distance,
       correctPosition: correctLatlng,
       guessPosition: guessCoords,
+      newAchievements,
+      currentStreak: newStreak,
     })
   } catch (err) {
     console.error('submitGuess error:', err)

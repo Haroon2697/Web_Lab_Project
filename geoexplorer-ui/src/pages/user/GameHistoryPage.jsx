@@ -55,16 +55,33 @@ export function GameHistoryPage() {
             <p className="text-sm font-semibold uppercase tracking-widest text-geo-p50 mb-1">Your Progress</p>
             <h1 className="text-4xl font-black">Game History</h1>
           </div>
-          <Link to="/game" className="btn-primary !py-2.5 !px-6">
+          <Link to="/game" className="btn-primary py-2.5! px-6!">
             🎮 New Game
           </Link>
         </div>
 
         {/* ── Loading ─────────────────────────────────── */}
         {loading && history.length === 0 && (
-          <div className="text-center py-20">
-            <div className="h-10 w-10 rounded-full border-2 border-geo-p50/30 border-t-geo-p50 animate-spin mx-auto mb-4" />
-            <p className="text-geo-p20">Loading game history...</p>
+          <div className="space-y-3 animate-fade-in">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="geo-card p-4!">
+                <div className="flex items-center gap-4">
+                  <div className="skeleton h-16 w-24 rounded-xl" />
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="skeleton h-4 w-28" />
+                      <div className="skeleton h-4 w-16 rounded-full" />
+                    </div>
+                    <div className="skeleton h-3 w-48" />
+                    <div className="skeleton h-3 w-24" />
+                  </div>
+                  <div className="text-right space-y-2">
+                    <div className="skeleton h-6 w-16 ml-auto" />
+                    <div className="skeleton h-3 w-20 ml-auto" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -92,7 +109,7 @@ export function GameHistoryPage() {
           </div>
           <div className="h-3 w-full rounded-full bg-geo-p20/20 overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-geo-p50 to-geo-success transition-all duration-1000"
+              className="h-full rounded-full bg-linear-to-r from-geo-p50 to-geo-success transition-all duration-1000"
               style={{ width: `${accuracy}%` }}
             />
           </div>
@@ -174,7 +191,7 @@ export function GameHistoryPage() {
                 {history.length === 0 ? 'Play your first game to see your history!' : 'Try adjusting the difficulty or result filter'}
               </p>
               {history.length === 0 && (
-                <Link to="/game" className="btn-primary mt-4 inline-block !py-2 !px-6">🎮 Play Now</Link>
+                <Link to="/game" className="btn-primary mt-4 inline-block py-2! px-6!">🎮 Play Now</Link>
               )}
             </div>
           ) : paged.map((entry, i) => (
@@ -182,13 +199,13 @@ export function GameHistoryPage() {
               key={entry._id || i}
               className={`group flex items-center gap-4 rounded-2xl border p-4 transition-all duration-200 hover:border-geo-p50/30 hover:-translate-y-0.5 hover:shadow-lg ${
                 entry.isCorrect
-                  ? 'border-geo-success/15 bg-geo-success/[0.03]'
-                  : 'border-geo-error/15 bg-geo-error/[0.03]'
+                  ? 'border-geo-success/15 bg-geo-success/3'
+                  : 'border-geo-error/15 bg-geo-error/3'
               } animate-fade-in`}
               style={{ animationDelay: `${i * 60}ms` }}
             >
               {/* Thumbnail */}
-              <div className="relative h-16 w-24 flex-shrink-0 overflow-hidden rounded-xl">
+              <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl">
                 <img src={entry.imageUrl} alt={entry.correctCountry} className="h-full w-full object-cover" />
                 <div className={`absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full text-xs ${
                   entry.isCorrect ? 'bg-geo-success' : 'bg-geo-error'
@@ -217,7 +234,7 @@ export function GameHistoryPage() {
               </div>
 
               {/* Score */}
-              <div className="text-right flex-shrink-0">
+              <div className="text-right shrink-0">
                 <span className={`text-2xl font-black ${entry.isCorrect ? 'text-geo-success' : 'text-geo-p20'}`}>
                   +{entry.score}
                 </span>
@@ -235,7 +252,7 @@ export function GameHistoryPage() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="btn-secondary !py-2 !px-4 !text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              className="btn-secondary py-2! px-4! text-sm! disabled:opacity-40 disabled:cursor-not-allowed"
             >
               ← Prev
             </button>
@@ -255,7 +272,7 @@ export function GameHistoryPage() {
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="btn-secondary !py-2 !px-4 !text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              className="btn-secondary py-2! px-4! text-sm! disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Next →
             </button>

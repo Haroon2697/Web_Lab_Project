@@ -16,7 +16,26 @@ import { rateLimiter } from './middleware/rateLimiter.js'
 const app = express()
 
 /* ── Middleware ─────────────────────────────────────────────── */
-app.use(cors({ origin: config.CLIENT_URL, credentials: true }))
+// Dev-friendly CORS: allow both Vite defaults and configured CLIENT_URL.
+const DEV_ALLOWED_ORIGINS = new Set([
+  config.CLIENT_URL,
+  'http://localhost:5173',
+  'http://localhost:5175',
+])
+
+app.use(
+  cors({
+    origin(origin, cb) {
+      // allow non-browser tools (no Origin header)
+      if (!origin) return cb(null, true)
+      // Allow any localhost/127.0.0.1 port in development (Vite can auto-bump ports).
+      if (/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) return cb(null, true)
+      if (DEV_ALLOWED_ORIGINS.has(origin)) return cb(null, true)
+      return cb(new Error(`CORS blocked for origin: ${origin}`))
+    },
+    credentials: true,
+  }),
+)
 app.use(express.json())
 app.use(rateLimiter)
 

@@ -3,12 +3,17 @@
  */
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { getProfileAPI, updateProfileAPI } from './userService'
+import { setUser } from '../auth/authSlice'
 
 export const fetchProfile = createAsyncThunk(
   'user/fetchProfile',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch, getState }) => {
     try {
-      return await getProfileAPI()
+      const data = await getProfileAPI()
+      const existing = getState()?.auth?.user || {}
+      // Keep token (and any auth-only fields) but refresh server-truth profile fields.
+      dispatch(setUser({ ...existing, ...data }))
+      return data
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to fetch profile')
     }

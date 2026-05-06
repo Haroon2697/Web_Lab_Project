@@ -1,6 +1,6 @@
-import { Footer } from './components/layout/Footer.jsx'
-import { Navbar } from './components/layout/Navbar.jsx'
-import { AppRoutes } from './routes.jsx'
+// This project uses JS/JSX as the runtime entry.
+// Keep this file aligned so imports of `./App` resolve consistently.
+export { default } from './App.jsx'
 
 function App() {
   return (

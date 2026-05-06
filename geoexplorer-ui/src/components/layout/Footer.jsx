@@ -7,6 +7,9 @@ const footerLink = ({ isActive }) =>
 export function Footer() {
   const year = new Date().getFullYear()
   const mainLinks = NAV_LINK_GROUPS.find((group) => group.title === 'User')?.links ?? []
+  const footerLinks = mainLinks.filter((l) =>
+    [ROUTES.home, ROUTES.game, ROUTES.leaderboard, ROUTES.profile, ROUTES.history].includes(l.to),
+  )
 
   return (
     <footer className="border-t border-[#e2e8f0] bg-white">
@@ -20,17 +23,19 @@ export function Footer() {
           </div>
           <div className="flex flex-wrap gap-4">
             <NavLink to={ROUTES.home} className={footerLink}>Home</NavLink>
+            <NavLink to={ROUTES.game} className={footerLink}>Play</NavLink>
             <NavLink to={ROUTES.leaderboard} className={footerLink}>Leaderboard</NavLink>
-            <NavLink to={ROUTES.profile} className={footerLink}>About</NavLink>
-            <Link to={ROUTES.login} className="text-sm text-geo-p20 hover:text-geo-p10">Login</Link>
+            <NavLink to={ROUTES.profile} className={footerLink}>Profile</NavLink>
+            <Link to={ROUTES.login} className="text-sm text-geo-p20 hover:text-geo-p10">User login</Link>
+            <Link to={ROUTES.admin.login} className="text-sm text-geo-p20 hover:text-geo-p10">Admin login</Link>
             <a href={PROJECT_REPO_URL} target="_blank" rel="noreferrer" className="text-sm text-geo-p20 hover:text-geo-p10">Repository</a>
           </div>
         </div>
 
         <div className="mb-8 border-t border-[#e2e8f0] pt-6">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-geo-p20">All routes</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-geo-p20">Quick links</p>
           <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="All footer links">
-            {mainLinks.map((link) => (
+            {footerLinks.map((link) => (
               <NavLink key={link.to} to={link.to} end={link.to === ROUTES.home} className={footerLink}>
                 {link.label}
               </NavLink>

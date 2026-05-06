@@ -116,10 +116,30 @@ export default function MapSelector({
 }) {
   const linePositions = useMemo(() => {
     if (!showResult || !guessPosition || !correctPosition) return []
-    return [
-      [guessPosition.lat, guessPosition.lng],
-      [correctPosition.lat, correctPosition.lng],
-    ]
+    
+    const lat1 = guessPosition.lat
+    const lng1 = guessPosition.lng
+    const lat2 = correctPosition.lat
+    const lng2 = correctPosition.lng
+    
+    const dLat = lat2 - lat1
+    let dLng = lng2 - lng1
+    if (dLng > 180) dLng -= 360
+    else if (dLng < -180) dLng += 360
+    
+    const dist = Math.sqrt(dLat * dLat + dLng * dLng)
+    const midLat = (lat1 + lat2) / 2 + (dist * 0.2)
+    const midLng = lng1 + (dLng / 2)
+    
+    const points = []
+    const resolution = 50
+    for (let i = 0; i <= resolution; i++) {
+      const t = i / resolution
+      const lat = (1 - t) * (1 - t) * lat1 + 2 * (1 - t) * t * midLat + t * t * lat2
+      const lng = (1 - t) * (1 - t) * lng1 + 2 * (1 - t) * t * midLng + t * t * lng2
+      points.push([lat, lng])
+    }
+    return points
   }, [showResult, guessPosition, correctPosition])
 
   const midpoint = useMemo(() => {
@@ -219,15 +239,15 @@ export default function MapSelector({
               </Popup>
             </Marker>
 
-            {/* Dashed line between guess → correct */}
-            {linePositions.length === 2 && (
+            {/* Curved animated line between guess → correct */}
+            {linePositions.length > 0 && (
               <Polyline
                 positions={linePositions}
                 pathOptions={{
                   color: '#3ae8bd',
                   weight: 3,
-                  dashArray: '10, 8',
                   opacity: 0.8,
+                  className: 'map-line-animate',
                 }}
               />
             )}

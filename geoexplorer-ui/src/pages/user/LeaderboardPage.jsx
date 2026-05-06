@@ -52,9 +52,35 @@ export function LeaderboardPage() {
 
         {/* ── Loading skeleton ────────────────────────── */}
         {loading && players.length === 0 && (
-          <div className="text-center py-20">
-            <div className="h-10 w-10 rounded-full border-2 border-geo-p50/30 border-t-geo-p50 animate-spin mx-auto mb-4" />
-            <p className="text-geo-p20">Loading leaderboard...</p>
+          <div className="geo-card p-0! overflow-hidden animate-fade-in">
+            <div className="px-6 py-4 border-b border-geo-p20/10">
+              <div className="skeleton h-6 w-48" />
+            </div>
+            <div className="divide-y divide-geo-p20/10">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="grid grid-cols-12 items-center px-6 py-4">
+                  <div className="col-span-1">
+                    <div className="skeleton h-5 w-8" />
+                  </div>
+                  <div className="col-span-5 flex items-center gap-3">
+                    <div className="skeleton h-9 w-9 rounded-full" />
+                    <div className="space-y-2">
+                      <div className="skeleton h-4 w-36" />
+                      <div className="skeleton h-3 w-20" />
+                    </div>
+                  </div>
+                  <div className="col-span-2 flex justify-center">
+                    <div className="skeleton h-4 w-10" />
+                  </div>
+                  <div className="col-span-2 flex justify-center">
+                    <div className="skeleton h-4 w-10" />
+                  </div>
+                  <div className="col-span-2 flex justify-end">
+                    <div className="skeleton h-4 w-16" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -101,7 +127,7 @@ export function LeaderboardPage() {
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-geo-p50 font-black text-white">{user?.name?.[0] || 'H'}</div>
               <div>
-                <p className="font-bold text-white">Your Rank</p>
+                <p className="font-bold text-geo-p10">Your Rank</p>
                 <p className="text-xs text-geo-p20">Keep playing to move up!</p>
               </div>
             </div>
@@ -127,14 +153,14 @@ export function LeaderboardPage() {
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-geo-p20 hover:text-white transition-colors text-sm"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-geo-p20 hover:text-geo-p10 transition-colors text-sm"
               >✕</button>
             )}
           </div>
         </div>
 
         {/* ── Table ─────────────────────────────────── */}
-        <div className="geo-card animate-slide-up delay-300 overflow-hidden !p-0">
+        <div className="geo-card animate-slide-up delay-300 overflow-hidden p-0!">
           {/* Table header */}
           <div className="grid grid-cols-12 px-6 py-3 text-xs font-semibold uppercase tracking-widest text-geo-p20 border-b border-geo-p20/10">
             <span className="col-span-1">Rank</span>
@@ -173,7 +199,7 @@ export function LeaderboardPage() {
 
                 {/* Player */}
                 <div className="col-span-5 flex items-center gap-3">
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-black flex-shrink-0 ${
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-black shrink-0 ${
                     entry.rank === 1 ? 'bg-geo-warning/20 text-geo-warning border border-geo-warning/40' :
                     isMe ? 'bg-geo-p50 text-white' :
                     'bg-geo-p20/10 text-geo-p20'
@@ -181,7 +207,7 @@ export function LeaderboardPage() {
                     {entry.name[0]}
                   </div>
                   <div>
-                    <span className={`font-semibold text-sm ${isMe ? 'text-geo-p50' : entry.rank <= 3 ? 'text-white' : 'text-geo-p10'}`}>
+                    <span className={`font-semibold text-sm ${isMe ? 'text-geo-p50' : entry.rank === 1 ? 'text-geo-warning' : entry.rank <= 3 ? 'text-geo-p10' : 'text-geo-p10'}`}>
                       {entry.name}
                     </span>
                     {isMe && (
@@ -201,7 +227,7 @@ export function LeaderboardPage() {
                 {/* Score */}
                 <div className={`col-span-2 text-right font-black text-base ${
                   entry.rank === 1 ? 'text-geo-warning' :
-                  isMe ? 'text-geo-p50' : 'text-white'
+                  isMe ? 'text-geo-p50' : 'text-geo-p10'
                 }`}>
                   {entry.totalScore?.toLocaleString()}
                 </div>
@@ -214,17 +240,17 @@ export function LeaderboardPage() {
         {totalPages > 1 && (
           <div className="mt-6 flex items-center justify-center gap-2">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="btn-secondary !py-2 !px-4 !text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+              className="btn-secondary py-2! px-4! text-sm! disabled:opacity-40 disabled:cursor-not-allowed">
               ← Prev
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
               <button key={p} onClick={() => setPage(p)}
                 className={`h-9 w-9 rounded-xl text-sm font-bold transition-all ${
-                  p === page ? 'bg-geo-p50 text-white' : 'border border-geo-p20/20 text-geo-p20 hover:border-geo-p50/40 hover:text-white'
+                  p === page ? 'bg-geo-p50 text-white' : 'border border-geo-p20/20 text-geo-p20 hover:border-geo-p50/40 hover:text-geo-p10'
                 }`}>{p}</button>
             ))}
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-              className="btn-secondary !py-2 !px-4 !text-sm disabled:opacity-40 disabled:cursor-not-allowed">
+              className="btn-secondary py-2! px-4! text-sm! disabled:opacity-40 disabled:cursor-not-allowed">
               Next →
             </button>
           </div>
@@ -233,7 +259,7 @@ export function LeaderboardPage() {
         {/* CTA */}
         <div className="mt-10 text-center">
           <p className="text-geo-p20 mb-4">Want to climb the leaderboard?</p>
-          <Link to="/game" className="btn-primary !px-10 !py-3">🎮 Play Now</Link>
+          <Link to="/game" className="btn-primary px-10! py-3!">🎮 Play Now</Link>
         </div>
       </div>
     </div>

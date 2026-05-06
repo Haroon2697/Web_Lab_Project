@@ -19,5 +19,6 @@ export const config = {
   JWT_SECRET: process.env.JWT_SECRET ?? 'dev_secret_change_me',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? '7d',
   UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY ?? '',
+  MAPILLARY_ACCESS_TOKEN: process.env.MAPILLARY_ACCESS_TOKEN ?? '',
   CLIENT_URL: process.env.CLIENT_URL ?? 'http://localhost:5173',
 }

@@ -35,6 +35,9 @@ const userSchema = new mongoose.Schema(
     gamesPlayed: { type: Number, default: 0 },
     highestScore: { type: Number, default: 0 },
     avatar: { type: String, default: '' },
+    currentStreak: { type: Number, default: 0 },
+    lastPlayedDate: { type: Date, default: null },
+    achievements: [{ type: String }],
   },
   { timestamps: true },
 )
