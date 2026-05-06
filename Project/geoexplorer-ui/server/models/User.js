@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'admin'],
       default: 'user',
     },
+    isBlocked: { type: Boolean, default: false },
     totalScore: { type: Number, default: 0 },
     gamesPlayed: { type: Number, default: 0 },
     highestScore: { type: Number, default: 0 },
